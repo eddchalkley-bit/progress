@@ -20,7 +20,14 @@ const TABS = [
 
 export default function App() {
   const today = localDate(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const [token, setTok] = useState(getToken());
+  // A link like https://…/#token=XXXX saves the token and tidies the address bar.
+  const [token, setTok] = useState(() => {
+    try {
+      const m = /[#&]token=([^&]+)/.exec(window.location.hash);
+      if (m) { setToken(decodeURIComponent(m[1])); history.replaceState(null, '', window.location.pathname); }
+    } catch { /* ignore */ }
+    return getToken();
+  });
   const [demoPref, setDemo] = useState(getDemoPref());
   const demo = DEMO_ONLY || demoPref || !token;
   const [data, setData] = useState(null);
@@ -46,6 +53,7 @@ export default function App() {
   }, [load, demo]);
 
   const analysis = useMemo(() => (data ? analyse(data, today) : null), [data, today]);
+  const emptyAnalysis = useMemo(() => analyse({ metrics: [], checkins: [], quick: [] }, today), [today]);
 
   const onSaveCheckin = async (checkin) => {
     if (demo) {
@@ -72,7 +80,7 @@ export default function App() {
     if (!demo) await tagSpike(id, tag);
   };
 
-  const onToken = (t) => { setToken(t); t = getToken(); setTok(t); if (t) { setDemoPref(false); setDemo(false); } };
+  const onToken = (t) => { setToken(t); t = getToken(); setTok(t); setError(''); if (t) { setDemoPref(false); setDemo(false); } };
   const onDemo = (on) => { setDemoPref(on); setDemo(on); };
   const goLog = (date = today) => { setLogDate(date); setTab('log'); window.scrollTo(0, 0); };
 
@@ -91,7 +99,9 @@ export default function App() {
               : <>Couldn’t load your data: {error}</>}
           </div>
         )}
-        {!analysis ? (
+        {tab === 'settings' && !analysis ? (
+          <Settings token={token} onToken={onToken} demo={demoPref} onDemo={onDemo} data={data} a={emptyAnalysis} onResearchRefresh={onResearchRefresh} demoOnly={DEMO_ONLY} />
+        ) : !analysis ? (
           <div className="loading">{loading ? 'Loading…' : ''}</div>
         ) : (
           <>
