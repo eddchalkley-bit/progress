@@ -149,7 +149,6 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
             <li>Keep <b>Show Result</b> at the very end while testing, then delete it so the automations run silently.</li>
           </ol>
           <p className="muted small">Optional — answer spike prompts during the sync: after the last Get Contents of URL add <b>Get Dictionary Value</b> (key <code>untagged</code>) → <b>Repeat with Each</b> → inside: <b>List</b> ({TAGS.map((t) => t.label).join(', ')}) → <b>Choose from List</b> → <b>Get Contents of URL</b> <code>{origin}/api/tag</code> (POST, same header, JSON <code>id</code> = Repeat Item’s <code>id</code>, <code>tag</code> = Chosen Item). Or just tag them on the Today screen.</p>
-          </ol>
           <div className="tip"><b>First run — bring in your history.</b> Temporarily change every “last 3 days” to <b>last 90 days</b>, run once (it may take a minute), then change them back. Progress will have a baseline straight away.</div>
         </Guide>
 
