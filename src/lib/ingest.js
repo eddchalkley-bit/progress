@@ -176,3 +176,65 @@ export function summariseNights(samples, tz = DEFAULT_TZ) {
   }
   return out;
 }
+
+// ---------- simple column format ----------
+const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
+
+function tzOffsetMinutes(utcMs, tz) {
+  const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    .formatToParts(new Date(utcMs)).reduce((o, x) => ((o[x.type] = x.value), o), {});
+  const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+  return (asUtc - utcMs) / 60000;
+}
+// Local wall-clock time in tz → ISO string with that zone's offset (e.g. 2026-10-19T07:02:00+01:00),
+// so the date part stays the local date.
+function zoned(y, mo, d, h, mi, s, tz) {
+  const guess = Date.UTC(y, mo - 1, d, h, mi, s);
+  const off = tzOffsetMinutes(guess - tzOffsetMinutes(guess, tz) * 60000, tz);
+  const p2 = (n) => String(Math.abs(n)).padStart(2, '0');
+  const sign = off >= 0 ? '+' : '-';
+  return { toISOString: () => `${y}-${p2(mo)}-${p2(d)}T${p2(h)}:${p2(mi)}:${p2(s)}${sign}${p2(Math.trunc(Math.abs(off) / 60))}:${p2(Math.abs(off) % 60)}` };
+}
+
+// Turns whatever date text Shortcuts produces into ISO 8601 (keeps ISO as-is).
+export function toIso(raw, tz = DEFAULT_TZ) {
+  const s = String(raw ?? '').trim().replace(/ | /g, ' ');
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s;
+  let m = /^(\d{1,2})\s+([A-Za-z]{3,})\.?\s+(\d{4})(?:,|\s+at)?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i.exec(s);
+  if (m) {
+    let h = +m[4]; if (m[7]) { const pm = m[7].toLowerCase() === 'pm'; if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
+    const mo = MONTHS[m[2].slice(0, 4).toLowerCase()] || MONTHS[m[2].slice(0, 3).toLowerCase()];
+    if (mo) return zoned(+m[3], mo, +m[1], h, +m[5], +(m[6] || 0), tz).toISOString();
+  }
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s);
+  if (m) {
+    const y = m[3].length === 2 ? 2000 + +m[3] : +m[3];
+    return zoned(y, +m[2], +m[1], +m[4], +m[5], +(m[6] || 0), tz).toISOString();
+  }
+  m = /^(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})$/.exec(s);
+  if (m) { const mo = MONTHS[m[2].slice(0, 3).toLowerCase()]; if (mo) return zoned(+m[3], mo, +m[1], 0, 0, 0, tz).toISOString(); }
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return null;
+  const p = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    .formatToParts(d).reduce((o, x) => ((o[x.type] = x.value), o), {});
+  return zoned(+p.year, +p.month, +p.day, +p.hour, +p.minute, +p.second, tz).toISOString();
+}
+
+const asList = (v) => (Array.isArray(v) ? v.map(String) : String(v ?? '').split(/\r?\n/)).map((x) => x.trim()).filter(Boolean);
+
+// {type: 'rhr', values: "58\n61", starts: "...\n...", ends: "...\n..."} → line format.
+export function fromColumns(body, tz = DEFAULT_TZ) {
+  const type = String(body.type).trim().toLowerCase();
+  const values = asList(body.values);
+  const starts = asList(body.starts ?? body.start);
+  const ends = asList(body.ends ?? body.end);
+  const lines = [];
+  for (let i = 0; i < values.length; i++) {
+    const st = toIso(starts[i], tz);
+    const en = toIso(ends[i] ?? starts[i], tz) || st;
+    if (!st) continue;
+    lines.push(`${type}|${st}|${en}|${values[i]}`);
+  }
+  return lines.join('\n');
+}

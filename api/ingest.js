@@ -1,6 +1,6 @@
 // POST /api/ingest — called by the "Progress Sync" shortcut with Apple Health readings.
 import { guard, readBody, db, TZ, fail } from './_lib.js';
-import { parseLines, summariseNights, nightOf } from '../src/lib/ingest.js';
+import { parseLines, summariseNights, nightOf, fromColumns } from '../src/lib/ingest.js';
 import { addDays, fmtMinutes, localDate } from '../src/lib/time.js';
 import { detectSpikes, minutesByDay, eventLabel } from '../src/lib/spikes.js';
 import { median } from '../src/lib/analysis.js';
@@ -19,6 +19,11 @@ export default async function handler(req, res) {
     const pick = (v) => (Array.isArray(v) ? v.join('\n') : typeof v === 'string' ? v : '');
     let text = pick(body.lines ?? body._text);
     for (const v of Object.values(body)) { const t = pick(v); if (t.length > text.length) text = t; }
+    // Simple format: {type, values, starts, ends} — one Find Health Samples per request, no loops.
+    if (body.type && body.values != null) {
+      text = fromColumns(body, TZ);
+      if (!text) text = '';
+    }
     const { rows, sleep, hrSamples, invalid, examplesInvalid } = parseLines(text, TZ);
     const sb = db();
     const now = new Date().toISOString();

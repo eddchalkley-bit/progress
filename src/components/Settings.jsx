@@ -122,42 +122,33 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
         <p className="muted small">Build these once in the Shortcuts app on your iPhone. Everything you need to paste is here — tap to copy.</p>
 
         <Guide title="1 · Progress Sync" sub="Reads your watch data from Apple Health and sends it here" open={!token}>
+          <p>No loops or variables: each health type is just two actions — find the samples, send them.</p>
           <ol>
             <li>In Shortcuts, tap <b>+</b> and name it <b>Progress Sync</b>.</li>
-            <li>Add <b>Find Health Samples</b>. Set Type to <b>Resting Heart Rate</b>, tap <b>Add Filter</b> → <b>Start Date is in the last 3 days</b>, and set <b>Group By</b> to <b>Day</b>.</li>
-            <li>Add <b>Repeat with Each</b> (it uses the Health Samples automatically).</li>
-            <li>Inside the repeat, add <b>Text</b> and build this line:
-              <div className="pattern"><code>rhr|</code><em>Start Date</em><code>|</code><em>End Date</em><code>|</code><em>Value</em></div>
-              For each blue item, insert <b>Repeat Item</b>, tap it and choose the property. For both dates, set <b>Date Format → ISO 8601</b> and switch on <b>Include ISO 8601 Time</b>.
+            <li>Add <b>Find Health Samples</b>. Type: <b>Resting Heart Rate</b>. Tap <b>Add Filter</b> → <b>Start Date</b> · <b>is in the last</b> · <b>3 days</b>. Set <b>Group By</b> to <b>Day</b>.</li>
+            <li>Add <b>Get Contents of URL</b> straight after it. URL:
+              <Copy text={`${origin}/api/ingest`} label="sync URL" />
+              Tap the arrow to show more. Method <b>POST</b>. Under Headers tap <b>Add new header</b>: key <code>Authorization</code>, value:
+              <Copy text={auth} label="authorization header" />
+              Request Body <b>JSON</b>. Add four <b>Text</b> fields:
+              <ul className="sub">
+                <li><code>type</code> → type <code>rhr</code></li>
+                <li><code>values</code> → tap the value box, tap <b>Select Variable</b>, tap the <b>Health Samples</b> above. Tap the blue token and choose <b>Value</b>.</li>
+                <li><code>starts</code> → Health Samples again → tap the token → <b>Start Date</b>.</li>
+                <li><code>ends</code> → Health Samples again → tap the token → <b>End Date</b>.</li>
+              </ul>
             </li>
-            <li>After <b>End Repeat</b>, add <b>Add to Variable</b> with the Repeat Results, variable name <b>Lines</b>.</li>
-            <li>Repeat steps 2–5 for each row below — long-press the <b>Find Health Samples</b> block → <b>Duplicate</b>, then change the Type, the code at the start of the Text, and check the blue tokens point to this loop’s Repeat Item.
+            <li>Add <b>Show Result</b> and run it. You should see <b>“Synced … readings”</b>. If it says <i>Nothing received</i>, check Settings › Privacy &amp; Security › Health › Shortcuts has access turned on.</li>
+            <li>Now add a pair for each type below. For each: add a new <b>Find Health Samples</b> at the bottom, then long-press the Get Contents of URL → <b>Duplicate</b> and drag the copy under it. In the copy, change <code>type</code>, then <b>re-pick all three blue tokens</b> so they point at the new Health Samples (tap each → Clear → Select Variable).
               <table className="types">
-                <thead><tr><th>Health type</th><th>Code</th><th>Group by</th></tr></thead>
+                <thead><tr><th>Health type</th><th><code>type</code></th><th>Group by</th></tr></thead>
                 <tbody>{HEALTH_TYPES.map(([t, c, g]) => <tr key={c}><td>{t}</td><td><code>{c}</code></td><td>{g}</td></tr>)}</tbody>
               </table>
-              <span className="muted small">For Sleep Analysis and the <code>hrs</code> heart-rate block leave Group By as None, and set the <code>hrs</code> block to <b>last 1 day</b> only (it sends every reading so Progress can find spikes). Optional extras (Group by Day): {OPTIONAL_TYPES.map(([t, c], i) => <span key={c}>{i ? ', ' : ''}{t} <code>{c}</code></span>)}.</span>
+              <span className="muted small">Sleep Analysis and Heart Rate (<code>hrs</code>) use Group By <b>None</b>. Set the <code>hrs</code> one to <b>last 1 day</b> only — it sends every reading so Progress can find spikes.</span>
             </li>
-            <li>Add <b>Combine Text</b>: combine <b>Lines</b> with <b>New Lines</b>.</li>
-            <li>Add <b>Get Contents of URL</b>. URL:
-              <Copy text={`${origin}/api/ingest`} label="sync URL" />
-              Tap <b>Show More</b>: Method <b>POST</b>. Add header <b>Authorization</b> with value:
-              <Copy text={auth} label="authorization header" />
-              Request Body <b>JSON</b>: add a Text field <b>lines</b> = <b>Combined Text</b>.
-            </li>
-            <li><b>Ask about heart-rate spikes.</b> After Get Contents of URL add:
-              <ul className="sub">
-                <li><b>Get Dictionary Value</b> — key <code>untagged</code> from Contents of URL.</li>
-                <li><b>Repeat with Each</b> item in Dictionary Value. Inside it:</li>
-                <li><b>Get Dictionary Value</b> — key <code>label</code> from Repeat Item.</li>
-                <li><b>List</b> with these items: {TAGS.map((t, i) => <span key={t.id}>{i ? ', ' : ''}<code>{t.label}</code></span>)}.</li>
-                <li><b>Choose from List</b> — prompt: <i>Heart rate up</i> <em className="tok">Dictionary Value</em> <i>— what was it?</i></li>
-                <li><b>Get Dictionary Value</b> — key <code>id</code> from <em className="tok">Repeat Item</em>.</li>
-                <li><b>Get Contents of URL</b> — <Copy text={`${origin}/api/tag`} label="tag URL" /> Method POST, the same Authorization header, Request Body JSON: <code>id</code> = Dictionary Value, <code>tag</code> = Chosen Item.</li>
-              </ul>
-              When a sync finds spikes you haven’t tagged (up to three), you’ll get a pick-list — one tap each. Anything you skip waits on the Today screen.
-            </li>
-            <li>Add <b>Show Result</b> while you test. Run it — you should see “Synced … readings”. Remove Show Result afterwards so automations run silently.</li>
+            <li>Keep <b>Show Result</b> at the very end while testing, then delete it so the automations run silently.</li>
+          </ol>
+          <p className="muted small">Optional — answer spike prompts during the sync: after the last Get Contents of URL add <b>Get Dictionary Value</b> (key <code>untagged</code>) → <b>Repeat with Each</b> → inside: <b>List</b> ({TAGS.map((t) => t.label).join(', ')}) → <b>Choose from List</b> → <b>Get Contents of URL</b> <code>{origin}/api/tag</code> (POST, same header, JSON <code>id</code> = Repeat Item’s <code>id</code>, <code>tag</code> = Chosen Item). Or just tag them on the Today screen.</p>
           </ol>
           <div className="tip"><b>First run — bring in your history.</b> Temporarily change every “last 3 days” to <b>last 90 days</b>, run once (it may take a minute), then change them back. Progress will have a baseline straight away.</div>
         </Guide>
