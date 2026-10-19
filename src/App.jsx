@@ -72,7 +72,7 @@ export default function App() {
     if (!demo) await tagSpike(id, tag);
   };
 
-  const onToken = (t) => { setToken(t); setTok(t); if (t) { setDemoPref(false); setDemo(false); } };
+  const onToken = (t) => { setToken(t); t = getToken(); setTok(t); if (t) { setDemoPref(false); setDemo(false); } };
   const onDemo = (on) => { setDemoPref(on); setDemo(on); };
   const goLog = (date = today) => { setLogDate(date); setTab('log'); window.scrollTo(0, 0); };
 
@@ -84,7 +84,13 @@ export default function App() {
             {DEMO_ONLY ? 'Demo with sample data — your own data appears once Progress is deployed' : 'Showing sample data — connect your watch in Settings'}
           </button>
         )}
-        {error && <div className="error-banner">Couldn’t load your data: {error}</div>}
+        {error && (
+          <div className="error-banner">
+            {/token/i.test(error)
+              ? <>Your saved token doesn’t match the one in Vercel. <button className="link-btn" onClick={() => setTab('settings')}>Re-enter it in Settings</button></>
+              : <>Couldn’t load your data: {error}</>}
+          </div>
+        )}
         {!analysis ? (
           <div className="loading">{loading ? 'Loading…' : ''}</div>
         ) : (

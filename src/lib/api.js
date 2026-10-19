@@ -2,9 +2,13 @@ const KEY = 'progress_token';
 const DEMO_KEY = 'progress_demo';
 
 export function getToken() {
-  try { return localStorage.getItem(KEY) || ''; } catch { return ''; }
+  try { return cleanToken(localStorage.getItem(KEY)); } catch { return ''; }
+}
+export function cleanToken(t) {
+  return String(t || '').replace(/^\s*(authorization:)?\s*bearer\s+/i, '').replace(/["'\s]/g, '');
 }
 export function setToken(t) {
+  t = cleanToken(t);
   try { t ? localStorage.setItem(KEY, t) : localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
 }
 export function getDemoPref() {
