@@ -1,0 +1,8 @@
+{
+  "crons": [
+    { "path": "/api/research-refresh", "schedule": "0 6 1 * *" }
+  ],
+  "functions": {
+    "api/research-refresh.js": { "maxDuration": 300 }
+  }
+}
