@@ -40,7 +40,7 @@ const OPTIONAL_TYPES = [
 ];
 
 function exportCsv(a) {
-  const cols = ['date', 'symptom', ...SYMPTOMS.map((s) => s.key), 'pem', 'screen_hours', 'phone_hours', 'laptop_hours', 'social', 'mental', 'stress', 'rests',
+  const cols = ['date', 'symptom', ...SYMPTOMS.map((s) => s.key), 'pem', 'screen_hours', 'phone_hours', 'laptop_hours', 'social', 'mental', 'stress', 'rests', 'food',
     'rhr', 'hrv', 'hr', 'sleep_min', 'deep_min', 'rem_min', 'nap_min', 'steps', 'exercise', 'energy', 'phone_min', 'laptop_min', 'hr_above_min', 'notes'];
   const esc = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
   const rows = a.days.map((d) => cols.map((c) => {

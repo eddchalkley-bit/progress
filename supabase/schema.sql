@@ -32,13 +32,15 @@ create table if not exists checkins (
   social        smallint,             -- 0 none, 1 light, 2 moderate, 3 heavy
   mental        smallint,             -- 0 low .. 3 very high
   stress        smallint,             -- 0 low .. 3 very high
-  rests         smallint,             -- rest breaks: 0 none, 1 '1-2', 2 '3-4', 3 '5+'
+  rests         smallint,
+  food          smallint,             -- healthy eating 1 (poor) .. 5 (excellent)             -- rest breaks: 0 none, 1 '1-2', 2 '3-4', 3 '5+'
   notes         text,
   updated_at    timestamptz not null default now()
 );
 
 -- (safe to re-run) add rest breaks to an existing table
 alter table checkins add column if not exists rests smallint;
+alter table checkins add column if not exists food smallint;
 alter table checkins add column if not exists phone_hours numeric(4,1);
 alter table checkins add column if not exists laptop_hours numeric(4,1);
 

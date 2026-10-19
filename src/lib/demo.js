@@ -74,7 +74,7 @@ export function makeDemoData(today, days = 84) {
       const v = (bias) => Math.max(0, Math.min(10, Math.round(sym + bias + (r() - 0.5) * 2)));
       checkins.push({
         date, fatigue: v(0.8), brain_fog: v(0.3), breath: v(-1.2), aches: v(-0.6), heart: v(-1),
-        pem, screen_hours: sc, phone_hours: phoneH, laptop_hours: laptopH, social: so, rests, mental: Math.floor(r() * 3), stress: Math.floor(r() * 2.6), notes: null,
+        pem, screen_hours: sc, phone_hours: phoneH, laptop_hours: laptopH, social: so, rests, food: Math.max(1, Math.min(5, Math.round(3 + (r() - 0.5) * 2.4))), mental: Math.floor(r() * 3), stress: Math.floor(r() * 2.6), notes: null,
       });
     }
     if (easing) push('nap_min', 30 + Math.round(r() * 40));

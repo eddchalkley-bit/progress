@@ -202,6 +202,9 @@ export const FACTORS = [
   { key: 'rest', label: 'Rest breaks', group: 'Recovery habits', lag: 1, precursor: true, lowerIsRisk: true, categorical: true, get: (d) => d.checkin?.rests ?? null,
     high: () => 'days with 3 or more rest breaks',
     precursorText: () => 'Fewer rest breaks than usual' },
+  { key: 'food', label: 'Healthy eating', group: 'Recovery habits', lag: 1, precursor: true, lowerIsRisk: true, get: (d) => d.checkin?.food ?? null,
+    high: (t) => `days you rated your eating above ${round(t, 1)}/5`,
+    precursorText: (avg, normal) => `Less healthy eating than usual (${round(avg, 0.5)}/5 vs ${round(normal, 0.5)})` },
   { key: 'nap', label: 'Daytime sleep', group: 'Recovery habits', lag: 1, precursor: false, get: (d) => d.nap_min ?? null,
     high: (t) => `days with more daytime sleep (over ${Math.round(t)} min)` },
   { key: 'sleep', label: 'Sleep', group: 'Body signals', lag: 0, precursor: true, lowerIsRisk: true, get: (d) => d.sleep_min ?? null,
@@ -459,6 +462,8 @@ const RESPONSE_METRICS = [
     say: (good, bad) => `slept ~${fmtMinutes(good)}${bad != null ? ` (vs ${fmtMinutes(bad)})` : ''}` },
   { key: 'hrAbove', label: 'time above ceiling', get: (d) => d.hr_above_min ?? null, lowerBetter: true, min: (a, b) => Math.abs(a - b) >= 10,
     say: (good, bad) => `kept time above your heart-rate ceiling to ~${Math.round(good)} min${bad != null ? ` (vs ${Math.round(bad)})` : ''}` },
+  { key: 'food', label: 'eating', get: (d) => d.checkin?.food ?? null, lowerBetter: false, min: (a, b) => Math.abs(a - b) >= 0.5,
+    say: (good, bad) => `ate well (~${round(good, 0.5)}/5${bad != null ? ` vs ${round(bad, 0.5)}` : ''})` },
   { key: 'nap', label: 'naps', get: (d) => d.nap_min ?? 0, lowerBetter: false, min: (a, b) => Math.abs(a - b) >= 15,
     say: (good) => `rested or napped in the day (~${Math.round(good)} min)` },
 ];

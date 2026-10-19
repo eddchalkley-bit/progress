@@ -31,10 +31,19 @@ export default async function handler(req, res) {
       mental: int(b.mental, 3),
       stress: int(b.stress, 3),
       rests: int(b.rests, 3),
+      food: b.food == null || b.food === '' ? null : Math.min(5, Math.max(1, Math.round(Number(b.food)) || 1)),
       notes: b.notes ? String(b.notes).slice(0, 2000) : null,
       updated_at: new Date().toISOString(),
     };
-    const { error } = await db().from('checkins').upsert(row, { onConflict: 'date' });
+    let { error } = await db().from('checkins').upsert(row, { onConflict: 'date' });
+    // If the database hasn't had a newer column added yet, save everything else rather than failing.
+    for (let tries = 0; error && tries < 5; tries++) {
+      const m = /'([a-z_]+)' column|column "?([a-z_]+)"? (?:of relation|does not exist)/i.exec(error.message || '');
+      const col = m && (m[1] || m[2]);
+      if (!col || !(col in row)) break;
+      delete row[col];
+      ({ error } = await db().from('checkins').upsert(row, { onConflict: 'date' }));
+    }
     if (error) throw error;
     res.status(200).json({ ok: true, checkin: row });
   } catch (err) {

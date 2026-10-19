@@ -3,8 +3,9 @@ import { SYMPTOMS } from '../lib/analysis.js';
 import { addDays, fmtDay } from '../lib/time.js';
 import { fmtHM } from '../lib/screens.js';
 
-const EMPTY = { fatigue: null, brain_fog: null, breath: null, aches: null, heart: null, pem: false, screen_hours: null, phone_hours: null, laptop_hours: null, social: null, mental: null, stress: null, rests: null, notes: '' };
+const EMPTY = { fatigue: null, brain_fog: null, breath: null, aches: null, heart: null, pem: false, screen_hours: null, phone_hours: null, laptop_hours: null, social: null, mental: null, stress: null, rests: null, food: null, notes: '' };
 const SOCIAL = ['None', 'Light', 'Moderate', 'Heavy'];
+const FOOD = ['Poor', 'Not great', 'OK', 'Good', 'Excellent — rare!'];
 const LOAD = ['Low', 'Some', 'High', 'Very high'];
 
 function sevLabel(v) {
@@ -135,6 +136,14 @@ export default function LogView({ a, date, setDate, today, onSave }) {
         <div className="field">
           <div className="field-top"><span>Rest breaks</span><span className="muted small">proper rests: lying or sitting, eyes closed</span></div>
           <Segmented label="Rest breaks" options={['0', '1–2', '3–4', '5+']} value={form.rests} onChange={(v) => set('rests', v)} />
+        </div>
+        <div className="field">
+          <div className="field-top"><span>Healthy eating today</span><span className="muted small">{form.food ? FOOD[form.food - 1] : '1 poor · 5 excellent'}</span></div>
+          <div className="segmented five" role="radiogroup" aria-label="Healthy eating today">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} role="radio" aria-checked={form.food === n} className={form.food === n ? 'on' : ''} onClick={() => set('food', form.food === n ? null : n)}>{n}</button>
+            ))}
+          </div>
         </div>
         <div className="field">
           <div className="field-top"><span>Notes</span></div>
