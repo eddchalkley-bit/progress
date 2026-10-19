@@ -39,14 +39,14 @@ export function targetSpecs(a) {
   const stepTarget = env.ready ? env.safe : b.steps;
   if (stepTarget) specs.steps = {
     key: 'steps', label: 'Steps', unit: '', better: 'lower',
-    target: stepTarget, band: [stepTarget * 0.7, stepTarget], targetLabel: `${Math.round(stepTarget / 100) / 10}k`,
+    target: stepTarget, band: [stepTarget * 0.7, stepTarget], targetLabel: `${Math.round(stepTarget / 100) / 10}k`, short: (v) => (v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : `${Math.round(v)}`),
     hard: env.ready && env.risky ? env.risky : stepTarget * 1.3,
-    floorZero: true,
+    floorZero: true, zeroBars: true,
     fmt: n0, diff: (d) => `${n0(d)} steps`,
     note: env.ready
       ? `The line is your envelope (~${n0(stepTarget)} steps). Under it is safe; bars above it are days you overdid it.`
       : `The line is your usual level (~${n0(stepTarget)} steps) until Progress has learned your envelope.`,
-    overWord: 'over your envelope', underWord: 'under',
+    overWord: env.ready ? 'over your envelope' : 'above your usual', underWord: 'under',
   };
 
   return specs;

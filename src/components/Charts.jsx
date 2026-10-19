@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fmtDay } from '../lib/time.js';
+import { fmtDay, localDate } from '../lib/time.js';
 import { statusOf, describe, STATUS_LABEL } from '../lib/targets.js';
 
 // Bars grow up or down from YOUR target line. The shaded band is the target range.
@@ -18,7 +18,7 @@ export function TargetChart({ series, spec, height = 150 }) {
   let vmax = Math.max(hi, spec.target, ...vals);
   const pad = (vmax - vmin) * 0.12 || 1;
   vmin = spec.floorZero ? 0 : vmin - pad;
-  vmax += pad;
+  vmax += pad * (spec.zeroBars ? 1.6 : 1);
   const y = (v) => padT + (1 - (v - vmin) / (vmax - vmin)) * ih;
   const slot = iw / series.length;
   const bw = Math.min(16, slot * 0.62);
@@ -30,10 +30,19 @@ export function TargetChart({ series, spec, height = 150 }) {
   return (
     <div className="tchart">
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${spec.label} for the last ${series.length} days against your target`}>
-        <rect x={padL} width={iw} y={y(hi)} height={Math.max(1, y(lo) - y(hi))} className="t-band" rx="3" />
+        {!spec.zeroBars && <rect x={padL} width={iw} y={y(hi)} height={Math.max(1, y(lo) - y(hi))} className="t-band" rx="3" />}
         {series.map((s, i) => {
           if (s.value == null) return <circle key={s.date} cx={cx(i)} cy={ty} r="1.6" className="t-missing" />;
           const st = statusOf(s.value, spec);
+          if (spec.zeroBars) {
+            const top = y(s.value), h = Math.max(2.5, y(0) - top);
+            return (
+              <g key={s.date}>
+                <rect x={cx(i) - bw / 2} y={top} width={bw} height={h} rx="2.5" className={`t-bar ${st} ${i === sel ? 'sel' : ''}`} />
+                {series.length <= 14 && spec.short && <text x={cx(i)} y={top - 4} className="t-vlabel" textAnchor="middle">{spec.short(s.value)}</text>}
+              </g>
+            );
+          }
           const top = Math.min(ty, y(s.value));
           const h = Math.max(2.5, Math.abs(y(s.value) - ty));
           return (
@@ -46,14 +55,14 @@ export function TargetChart({ series, spec, height = 150 }) {
         <text x={W - padR + 6} y={ty + 9} className="t-tsub">target</text>
         {series.map((s, i) => s.crash && <circle key={'c' + s.date} cx={cx(i)} cy={H - padB + 8} r="2.6" className="t-crash" />)}
         <text x={padL} y={H - 2} className="t-axis">{fmtDay(series[0].date, { day: 'numeric', month: 'short' })}</text>
-        <text x={padL + iw} y={H - 2} className="t-axis" textAnchor="end">Today</text>
+        <text x={padL + iw} y={H - 2} className="t-axis" textAnchor="end">{i18nDay(series[lastIdx].date)}</text>
         {series.map((s, i) => (
           <rect key={'h' + s.date} x={padL + slot * i} y={0} width={slot} height={H - padB} fill="transparent"
             onClick={() => setSel(i)} style={{ cursor: 'pointer' }} />
         ))}
       </svg>
       <div className="t-readout">
-        <span>{i18nDay(cur.date, sel === lastIdx)}</span>
+        <span>{i18nDay(cur.date)}</span>
         <strong>{cur.value == null ? 'No data' : `${spec.fmt(cur.value)}${spec.unit}`}</strong>
         {curStatus && <span className={`t-pill ${curStatus}`}>{describe(cur.value, spec)}</span>}
       </div>
@@ -61,8 +70,12 @@ export function TargetChart({ series, spec, height = 150 }) {
   );
 }
 
-function i18nDay(date, isToday) {
-  return isToday ? 'Today' : fmtDay(date, { weekday: 'short', day: 'numeric', month: 'short' });
+function i18nDay(date) {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const now = new Date();
+  if (date === localDate(now, tz)) return 'Today';
+  if (date === localDate(new Date(now.getTime() - 86400e3), tz)) return 'Yesterday';
+  return fmtDay(date, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 export function TargetLegend({ crash = false }) {

@@ -65,6 +65,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
 
   const dateLabel = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   const checkedIn = Boolean(t.checkin);
+  const showWorked = s.level === 'amber' || s.level === 'red' || plan.recovery.active;
 
   return (
     <div className="screen">
@@ -99,110 +100,19 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
           <div className="status-kicker">{s.level === 'building' ? 'Getting started' : 'Today'}</div>
           <h2>{s.title}</h2>
           <p>{s.advice}</p>
-          {s.reasons.length > 0 && (
-            <ul className="reasons">
-              {s.reasons.map((r, i) => <li key={i} className={r.level}>{r.text}</li>)}
-            </ul>
-          )}
         </section>
       )}
 
       {a.redFlag && <div className="flag-banner">{a.redFlag}</div>}
 
-      <section className="card plan">
-        <div className="card-head">
-          <h3>Today’s plan</h3>
-          {plan.budget && plan.factor < 1 && <span className="muted small">{Math.round(plan.factor * 100)}% of your {plan.envReady ? 'envelope' : 'usual'}</span>}
-        </div>
-        {plan.budget ? (
-          <>
-            <div className="big">{fmt(plan.steps)}<span className="unit"> / ~{fmt(plan.budget)} steps</span></div>
-            <div className="env-bar" role="img" aria-label={`${fmt(plan.steps)} of about ${fmt(plan.budget)} steps`}>
-              <div className={`env-fill ${plan.steps > plan.budget ? 'over' : ''}`} style={{ width: `${Math.min(100, (plan.steps / planMax) * 100)}%` }} />
-              {plan.hourFrac > 0.05 && plan.hourFrac < 1 && <div className="env-now" style={{ left: `${(plan.byNow / planMax) * 100}%` }} title="Even pace by now" />}
-              <div className="env-mark safe" style={{ left: `${(plan.budget / planMax) * 100}%` }} />
-            </div>
-            <div className="plan-scale">
-              {plan.hourFrac > 0.05 && plan.hourFrac < 1 ? <span><i className="dot-now" />Even pace by now: ~{fmt(plan.byNow)}</span> : <span />}
-              <span><i className="dot-limit" />Today’s budget</span>
-            </div>
-            {plan.pace && <p className={`pace ${plan.pace.tone}`}>{plan.pace.text}</p>}
-          </>
-        ) : (
-          <>
-            <div className="progress-line"><div style={{ width: `${Math.min(100, (env.n / env.needed) * 100)}%` }} /></div>
-            <p className="muted small">Your step budget appears after a few days of watch data. Steps today: {fmt(t.steps)}.</p>
-          </>
-        )}
-        <div className="plan-screens">
-          <div className="ps-head">
-            <span>Screens today</span>
-            <strong>{plan.screens.total != null ? fmtHM(plan.screens.total * 60) : '–'}{plan.screens.budget ? <span className="unit"> / ~{fmtHM(plan.screens.budget * 60)}</span> : null}</strong>
-          </div>
-          {plan.screens.budget && plan.screens.total != null && (
-            <div className="ps-bar">
-              <div className="ps-laptop" style={{ width: `${Math.min(100, ((plan.screens.laptop || 0) / Math.max(plan.screens.budget, plan.screens.total) / 1.1) * 100)}%` }} />
-              <div className="ps-phone" style={{ width: `${Math.min(100, ((plan.screens.phone || 0) / Math.max(plan.screens.budget, plan.screens.total) / 1.1) * 100)}%` }} />
-              <div className="env-mark safe" style={{ left: `${(plan.screens.budget / Math.max(plan.screens.budget, plan.screens.total) / 1.1) * 100}%` }} />
-            </div>
-          )}
-          <div className="ps-legend">
-            <span><i className="sw-l" />Laptop / work {fmtHM(plan.screens.laptop != null ? plan.screens.laptop * 60 : null)}{plan.screens.laptopOpen != null && <b className="live"> · on now {fmtHM(plan.screens.laptopOpen)}</b>}</span>
-            <span><i className="sw-p" />Phone {fmtHM(plan.screens.phone != null ? plan.screens.phone * 60 : null)}</span>
-          </div>
-        </div>
-        <div className="plan-rest">
-          <span>Rest breaks to plan</span>
-          <strong>{plan.restTarget}</strong>
-        </div>
-        <ul className="tips">
-          {plan.tips.map((tip) => <li key={tip.id}>{tip.text}</li>)}
-        </ul>
-      </section>
+      <Glance a={a} plan={plan} />
 
-      <SpikesCard events={a.events} sessions={a.screenSessions} today={a.today} aboveToday={t.hr_above_min} ceiling={b.hrCeiling} onTag={onTag} />
-
-      {(s.level === 'amber' || s.level === 'red' || plan.recovery.active) && (
-        <section className="card">
-          <div className="card-head"><h3>What’s worked before</h3></div>
-          <WhatWorked a={a} level={plan.recovery.active ? 'red' : s.level} compact />
+      {plan.tips.length > 0 && (
+        <section className="card tip-card">
+          <div className="card-head"><h3>Today</h3><span className="muted small">Rest breaks: {plan.restTarget}</span></div>
+          <ul className="tips">{plan.tips.slice(0, 3).map((tip) => <li key={tip.id}>{tip.text}</li>)}</ul>
         </section>
       )}
-
-      {notes.length > 0 && (
-        <section className="card">
-          <div className="card-head"><h3>Things I’ve noticed</h3></div>
-          <ul className="notices">
-            {notes.map((n) => (
-              <li key={n.title} className={n.tone}>
-                <span className="n-icon" aria-hidden="true">{n.tone === 'good' ? '↗' : n.tone === 'watch' ? '!' : '·'}</span>
-                <div><strong>{n.title}</strong><p>{n.text}</p></div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {b.hrCeiling && (
-        <section className="card hr-card">
-          <div>
-            <div className="signal-label">Heart-rate ceiling</div>
-            <div className="signal-value">{b.hrCeiling}<span className="unit"> bpm</span></div>
-          </div>
-          <p className="muted small">Resting {Math.round(b.rhr)} + 15. Try not to spend more than a couple of minutes above it; if you do, rest until you’re back near {Math.round(b.rhr) + 10}.</p>
-        </section>
-      )}
-
-      <div className="section-label">
-        <h2>Last 14 days vs your targets</h2>
-        <p className="muted small">The line is where you should be. Tap a bar to see that day.</p>
-        <TargetLegend />
-      </div>
-      <TargetCard spec={specs.sleep} days={last14} />
-      {specs.rhr && <TargetCard spec={specs.rhr} days={last14} />}
-      {specs.hrv && <TargetCard spec={specs.hrv} days={last14} />}
-      {specs.steps && <TargetCard spec={specs.steps} days={last14.slice(0, -1)} title="Steps (full days)" />}
-      {specs.symptom && <TargetCard spec={specs.symptom} days={last14} />}
 
       <button className={`checkin-cta ${checkedIn ? 'done' : ''}`} onClick={() => onCheckIn()}>
         <div>
@@ -214,6 +124,157 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
       {!y?.checkin && days.length > 1 && (
         <button className="link-btn" onClick={() => onCheckIn(y.date)}>Missed yesterday? Add yesterday’s check-in</button>
       )}
+
+      <SpikesCard events={a.events} sessions={a.screenSessions} today={a.today} aboveToday={t.hr_above_min} ceiling={b.hrCeiling} onTag={onTag} onlyUntagged />
+
+      {showWorked && (
+        <section className="card">
+          <div className="card-head"><h3>What’s worked before</h3></div>
+          <WhatWorked a={a} level={plan.recovery.active ? 'red' : s.level} compact />
+        </section>
+      )}
+
+      <details className="more">
+        <summary>
+          <span>More detail</span>
+          <span className="muted small">why today’s status · plan · patterns · charts</span>
+        </summary>
+        <div className="more-body">
+          {s.reasons.length > 0 && (
+            <section className="card">
+              <div className="card-head"><h3>Why today’s status</h3></div>
+              <ul className="reasons plain-reasons">{s.reasons.map((r, i) => <li key={i} className={r.level}>{r.text}</li>)}</ul>
+            </section>
+          )}
+
+          <section className="card plan">
+            <div className="card-head">
+              <h3>Today’s plan</h3>
+              {plan.budget && plan.factor < 1 && <span className="muted small">{Math.round(plan.factor * 100)}% of your envelope</span>}
+            </div>
+            {plan.budget ? (
+              <>
+                <div className="big">{fmt(plan.steps)}<span className="unit"> / ~{fmt(plan.budget)} steps</span></div>
+                <div className="env-bar" role="img" aria-label={`${fmt(plan.steps)} of about ${fmt(plan.budget)} steps`}>
+                  <div className={`env-fill ${plan.steps > plan.budget ? 'over' : ''}`} style={{ width: `${Math.min(100, (plan.steps / planMax) * 100)}%` }} />
+                  {plan.hourFrac > 0.05 && plan.hourFrac < 1 && <div className="env-now" style={{ left: `${(plan.byNow / planMax) * 100}%` }} />}
+                  <div className="env-mark safe" style={{ left: `${(plan.budget / planMax) * 100}%` }} />
+                </div>
+                <div className="plan-scale">
+                  {plan.hourFrac > 0.05 && plan.hourFrac < 1 ? <span><i className="dot-now" />Even pace by now: ~{fmt(plan.byNow)}</span> : <span />}
+                  <span><i className="dot-limit" />Today’s budget</span>
+                </div>
+                {plan.pace && <p className={`pace ${plan.pace.tone}`}>{plan.pace.text}</p>}
+              </>
+            ) : (
+              <p className="muted small">A step budget appears once Progress has learned your envelope — about two weeks of check-ins. Steps today: {fmt(t.steps)}.</p>
+            )}
+            {plan.screens.total != null && (
+              <div className="plan-screens">
+                <div className="ps-head">
+                  <span>Screens today</span>
+                  <strong>{fmtHM(plan.screens.total * 60)}{plan.screens.budget ? <span className="unit"> / ~{fmtHM(plan.screens.budget * 60)}</span> : null}</strong>
+                </div>
+                <div className="ps-legend">
+                  <span><i className="sw-l" />Laptop / work {fmtHM(plan.screens.laptop != null ? plan.screens.laptop * 60 : null)}{plan.screens.laptopOpen != null && <b className="live"> · on now {fmtHM(plan.screens.laptopOpen)}</b>}</span>
+                  <span><i className="sw-p" />Phone {fmtHM(plan.screens.phone != null ? plan.screens.phone * 60 : null)}</span>
+                </div>
+              </div>
+            )}
+            {plan.tips.length > 3 && <ul className="tips">{plan.tips.slice(3).map((tip) => <li key={tip.id}>{tip.text}</li>)}</ul>}
+          </section>
+
+          {notes.length > 0 && (
+            <section className="card">
+              <div className="card-head"><h3>Things I’ve noticed</h3></div>
+              <ul className="notices">
+                {notes.map((n) => (
+                  <li key={n.title} className={n.tone}>
+                    <span className="n-icon" aria-hidden="true">{n.tone === 'good' ? '↗' : n.tone === 'watch' ? '!' : '·'}</span>
+                    <div><strong>{n.title}</strong><p>{n.text}</p></div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {b.hrCeiling && (
+            <section className="card hr-card">
+              <div>
+                <div className="signal-label">Heart-rate ceiling</div>
+                <div className="signal-value">{b.hrCeiling}<span className="unit"> bpm</span></div>
+              </div>
+              <p className="muted small">Resting {Math.round(b.rhr)} + 15. Try not to spend more than a couple of minutes above it; if you do, rest until you’re back near {Math.round(b.rhr) + 10}.</p>
+            </section>
+          )}
+
+          <div className="section-label">
+            <h2>Last 14 days</h2>
+            <p className="muted small">The line is where you should be. Tap a bar to see that day.</p>
+            <TargetLegend />
+          </div>
+          <TargetCard spec={specs.sleep} days={last14} />
+          {specs.steps && <TargetCard spec={specs.steps} days={last14.slice(0, -1)} title="Steps (full days)" />}
+          {specs.rhr && <TargetCard spec={specs.rhr} days={last14} />}
+          {specs.hrv && <TargetCard spec={specs.hrv} days={last14} />}
+          {specs.symptom && <TargetCard spec={specs.symptom} days={last14} />}
+        </div>
+      </details>
     </div>
   );
+}
+
+// Four numbers that answer "how am I doing?" at a glance.
+function Glance({ a, plan }) {
+  const days = a.days, t = days[days.length - 1], y = days[days.length - 2] || {};
+  const b = a.baseline;
+  const tiles = [];
+
+  const sleep = t.sleep_min;
+  tiles.push({
+    label: 'Sleep', value: sleep != null ? fmtMinutes(sleep) : '–', sub: 'last night',
+    tone: sleep == null ? '' : sleep >= 420 ? 'ok' : sleep >= 360 ? 'warn' : 'bad',
+    note: sleep == null ? 'No data yet' : sleep >= 420 ? 'Good amount' : 'Under 7 hours',
+  });
+
+  const rhr = t.rhr ?? y.rhr;
+  const rd = rhr != null && b.rhr != null ? rhr - b.rhr : null;
+  tiles.push({
+    label: 'Resting heart', value: rhr != null ? `${Math.round(rhr)}` : '–', unit: 'bpm', sub: '',
+    tone: rd == null ? '' : rd >= 5 ? 'bad' : rd >= 3 ? 'warn' : 'ok',
+    note: rd == null ? 'Learning your normal' : Math.abs(rd) < 3 ? 'Your normal' : `${rd > 0 ? '+' : '−'}${Math.abs(Math.round(rd))} vs normal`,
+  });
+
+  const hrv = t.hrv ?? y.hrv;
+  const hp = hrv != null && b.hrv ? (hrv - b.hrv) / b.hrv : null;
+  tiles.push({
+    label: 'HRV', value: hrv != null ? `${Math.round(hrv)}` : '–', unit: 'ms', sub: '',
+    tone: hp == null ? '' : hp <= -0.2 ? 'bad' : hp <= -0.1 ? 'warn' : 'ok',
+    note: hp == null ? 'Learning your normal' : Math.abs(hp) < 0.1 ? 'Your normal' : `${hp > 0 ? '+' : '−'}${Math.abs(Math.round(hp * 100))}% vs normal`,
+  });
+
+  const steps = t.steps;
+  let stepTone = '', stepNote = b.steps ? `Usually ~${fmtK(b.steps)}` : 'So far today';
+  if (plan.budget) {
+    stepNote = `of ~${fmtK(plan.budget)} budget`;
+    stepTone = steps > plan.budget ? 'bad' : plan.pace?.tone === 'warn' ? 'warn' : 'ok';
+  }
+  tiles.push({ label: 'Steps today', value: steps != null ? fmtK(steps) : '–', sub: '', tone: stepTone, note: stepNote });
+
+  return (
+    <section className="glance" aria-label="At a glance">
+      {tiles.map((x) => (
+        <div key={x.label} className={`g-tile ${x.tone}`}>
+          <div className="g-label">{x.label}</div>
+          <div className="g-value">{x.value}{x.unit && <span className="unit"> {x.unit}</span>}</div>
+          <div className="g-note"><i className="g-dot" />{x.note}</div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function fmtK(v) {
+  if (v == null) return '–';
+  return v >= 10000 ? `${(v / 1000).toFixed(1)}k` : Math.round(v).toLocaleString('en-GB');
 }

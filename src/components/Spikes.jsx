@@ -44,12 +44,13 @@ function SpikeRow({ e, onTag, hint }) {
 }
 
 // Today: spikes from today plus any untagged from yesterday.
-export function SpikesCard({ events, sessions, today, aboveToday, ceiling, onTag }) {
+export function SpikesCard({ events, sessions, today, aboveToday, ceiling, onTag, onlyUntagged = false }) {
   const yday = addDays(today, -1);
   const list = (events || []).filter((e) => e.source !== 'manual' && (
     localDate(new Date(e.start_at), TZ) === today || (!e.tag && localDate(new Date(e.start_at), TZ) === yday)
   )).sort((a, b) => b.start_at.localeCompare(a.start_at));
   const untagged = list.filter((e) => !e.tag).length;
+  if (onlyUntagged && untagged === 0) return null;
   return (
     <section className="card spikes-card">
       <div className="card-head">
