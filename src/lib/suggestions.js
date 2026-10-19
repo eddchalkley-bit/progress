@@ -55,7 +55,8 @@ export function dayPlan(a, now = new Date()) {
   const reference = env.ready ? env.safe : a.baseline.steps;
   let factor = { green: 1, amber: 0.7, red: 0.5, building: 0.9 }[level] ?? 0.9;
   if (rec.active) factor = { rest: 0.4, ease: 0.5, return: 0.75 }[rec.phase];
-  const budget = reference ? r100(reference * factor) : null;
+  // No step budget until the envelope is learned from your own data — a guessed budget can mislead.
+  const budget = env.ready && reference ? r100(reference * factor) : null;
 
   // Where you'd be by now if activity were spread evenly from 7am to 9pm.
   const h = now.getHours() + now.getMinutes() / 60;
