@@ -59,6 +59,8 @@ export function parseLines(text, tz = DEFAULT_TZ) {
     const parts = line.split('|').map((p) => p.trim());
     if (parts.length < 3) { invalid++; if (examplesInvalid.length < 2) examplesInvalid.push(line); continue; }
     let metric = parts[0].toLowerCase();
+    // Dates not in ISO format (e.g. "16 Oct 2026 at 00:03") are converted.
+    for (const k of [1, 2]) if (parts[k] && !/^\d{4}-\d{2}-\d{2}/.test(parts[k])) parts[k] = toIso(parts[k], tz) || parts[k];
     metric = ALIASES[metric] || metric;
     const start = parts[1];
     const end = parts.length === 3 ? parts[1] : parts[2];
