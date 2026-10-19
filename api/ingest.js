@@ -15,8 +15,10 @@ export default async function handler(req, res) {
   if (!guard(req, res, ['POST'])) return;
   try {
     const body = readBody(req);
-    let text = body.lines ?? body._text ?? '';
-    if (Array.isArray(text)) text = text.join('\n');
+    // Accept the readings under any key (lines, Lines, text…) — use the longest text value sent.
+    const pick = (v) => (Array.isArray(v) ? v.join('\n') : typeof v === 'string' ? v : '');
+    let text = pick(body.lines ?? body._text);
+    for (const v of Object.values(body)) { const t = pick(v); if (t.length > text.length) text = t; }
     const { rows, sleep, hrSamples, invalid, examplesInvalid } = parseLines(text, TZ);
     const sb = db();
     const now = new Date().toISOString();
@@ -123,7 +125,9 @@ export default async function handler(req, res) {
     if (lastNight) message += ` Last night: ${fmtMinutes(lastNight)}.`;
     if (untagged.length) message += ` ${untagged.length} heart-rate ${untagged.length === 1 ? 'spike' : 'spikes'} to tag.`;
     if (invalid) message += ` ${invalid} lines skipped — check date format is ISO 8601.`;
-    res.status(200).json({ ok: true, message, saved: rows.length, sleepSamples: sleep.length, hrSamples: hrSamples.length, spikes: spikeCount, untagged, invalid, examplesInvalid });
+    const received = { keys: Object.keys(body), chars: text.length, firstLine: text.split(/\r?\n/).find((l) => l.trim())?.slice(0, 120) || null };
+    if (!text.trim()) message = 'Nothing received — the shortcut sent an empty list. Check the Combine Text step and that the JSON field is set to Combined Text.';
+    res.status(200).json({ ok: true, message, received, saved: rows.length, sleepSamples: sleep.length, hrSamples: hrSamples.length, spikes: spikeCount, untagged, invalid, examplesInvalid });
   } catch (err) {
     fail(res, err);
   }
