@@ -76,7 +76,7 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
   const auth = `Bearer ${token || 'YOUR-TOKEN'}`;
   const recent = a.days.slice(-7);
   const has = (k) => recent.some((d) => d[k] != null);
-  const checks = [['Resting HR', 'rhr'], ['HRV', 'hrv'], ['Sleep', 'sleep_min'], ['Steps', 'steps'], ['Brisk movement', 'exercise'], ['Active energy', 'energy']];
+  const checks = [['Resting HR', 'rhr'], ['HRV', 'hrv'], ['Sleep', 'sleep_min'], ['Steps', 'steps'], ['Brisk movement', 'exercise'], ['Active energy', 'energy'], ['Heart-rate readings (spikes)', 'hr_above_min']];
 
   const makeToken = () => {
     const bytes = new Uint8Array(24);

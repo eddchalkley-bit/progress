@@ -71,9 +71,9 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
     <div className="screen">
       <header className="brand-row">
         <Logo />
-        <button className="sync" onClick={onRefresh} disabled={loading}>
+        <button className="sync" onClick={() => { window.location.href = 'shortcuts://run-shortcut?name=Progress%20Sync'; }} disabled={loading} title="Run Progress Sync">
           <span className={`dot ${lastSync && Date.now() - new Date(lastSync) < 18 * 3600e3 ? 'fresh' : 'stale'}`} />
-          {loading ? 'Refreshing…' : `Synced ${since(lastSync)}`}
+          {loading ? 'Refreshing…' : `Synced ${since(lastSync)} · Sync now`}
         </button>
       </header>
       <div className="greeting">
