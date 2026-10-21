@@ -576,3 +576,15 @@ input[type=range]::-webkit-slider-thumb { margin-top: -9px; border: 0; box-shado
 .me-am { background: var(--accent-2); }
 .me-pm { background: var(--accent); }
 .me-key { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin: 0 4px 0 6px; }
+
+/* ---------- 0–10 number picker ---------- */
+.num-pick { display: grid; grid-template-columns: repeat(11, 1fr); gap: 3px; margin-top: 6px; }
+.num-pick button { border: 0; background: var(--soft); color: var(--ink); border-radius: 9px; height: 40px; padding: 0; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; position: relative; }
+.num-pick button.am::after { content: ''; position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--muted); }
+.num-pick button.on { color: #fff; }
+.num-pick button.on.sev-0 { background: var(--green); }
+.num-pick button.on.sev-1 { background: var(--accent-2); }
+.num-pick button.on.sev-2 { background: var(--amber); }
+.num-pick button.on.sev-3 { background: var(--red); }
+.num-pick button.on.am::after { background: #fff; }
+.sym-label { font-weight: 600; }

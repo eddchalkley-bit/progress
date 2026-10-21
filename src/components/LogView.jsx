@@ -132,13 +132,16 @@ export default function LogView({ a, date, setDate, mode, setMode, today, onSave
           return (
             <div key={k} className="slider-row">
               <div className="slider-top">
-                <label htmlFor={k}>{s.label}{am != null && <span className="am-hint">morning {am}</span>}</label>
-                <span className={`sev ${form[k] == null ? 'unset' : ''}`}>{form[k] ?? '–'} · {sevLabel(form[k])}</span>
+                <span className="sym-label">{s.label}{am != null && <span className="am-hint">morning {am}</span>}</span>
+                <span className={`sev ${form[k] == null ? 'unset' : ''}`}>{sevLabel(form[k])}</span>
               </div>
-              <input id={k} type="range" min="0" max="10" step="1" value={form[k] ?? 0}
-                className={form[k] == null ? 'unset' : ''}
-                style={{ '--pct': `${((form[k] ?? 0) / 10) * 100}%` }}
-                onChange={(e) => set(k, Number(e.target.value))} />
+              <div className="num-pick" role="radiogroup" aria-label={s.label}>
+                {Array.from({ length: 11 }, (_, n) => (
+                  <button key={n} role="radio" aria-checked={form[k] === n}
+                    className={`${form[k] === n ? 'on' : ''} ${am === n ? 'am' : ''} sev-${n === 0 ? 0 : n <= 3 ? 1 : n <= 6 ? 2 : 3}`}
+                    onClick={() => set(k, form[k] === n ? null : n)}>{n}</button>
+                ))}
+              </div>
             </div>
           );
         })}
