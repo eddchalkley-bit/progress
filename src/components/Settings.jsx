@@ -34,14 +34,16 @@ const HEALTH_TYPES = [
   ['Exercise Minutes', 'exercise', 'Day'],
   ['Sleep Analysis', 'sleep', 'None'],
   ['Heart Rate (every reading)', 'hrs', 'None'],
+  ['Respiratory Rate', 'resp', 'Day'],
+  ['Apple Sleeping Wrist Temperature', 'temp', 'Day'],
 ];
 const OPTIONAL_TYPES = [
-  ['Heart Rate', 'hr'], ['Walking Heart Rate Average', 'walkhr'], ['Respiratory Rate', 'resp'], ['Blood Oxygen', 'spo2'],
+  ['Heart Rate', 'hr'], ['Walking Heart Rate Average', 'walkhr'], ['Respiratory Rate', 'resp'], ['Blood Oxygen', 'spo2'], ['Apple Sleeping Wrist Temperature', 'temp'],
 ];
 
 function exportCsv(a) {
   const cols = ['date', 'symptom', ...SYMPTOMS.map((s) => s.key), 'pem', 'screen_hours', 'phone_hours', 'laptop_hours', 'social', 'mental', 'stress', 'rests', 'food',
-    'rhr', 'hrv', 'hr', 'sleep_min', 'deep_min', 'rem_min', 'nap_min', 'steps', 'exercise', 'energy', 'phone_min', 'laptop_min', 'hr_above_min', 'notes'];
+    'rhr', 'hrv', 'hr', 'resp', 'temp', 'spo2', 'sleep_min', 'deep_min', 'rem_min', 'nap_min', 'steps', 'exercise', 'energy', 'phone_min', 'laptop_min', 'hr_above_min', 'notes'];
   const esc = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
   const rows = a.days.map((d) => cols.map((c) => {
     if (c === 'symptom') return d.symptom == null ? '' : d.symptom.toFixed(1);
@@ -76,7 +78,7 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
   const auth = `Bearer ${token || 'YOUR-TOKEN'}`;
   const recent = a.days.slice(-7);
   const has = (k) => recent.some((d) => d[k] != null);
-  const checks = [['Resting HR', 'rhr'], ['HRV', 'hrv'], ['Sleep', 'sleep_min'], ['Steps', 'steps'], ['Brisk movement', 'exercise'], ['Active energy', 'energy'], ['Heart-rate readings (spikes)', 'hr_above_min']];
+  const checks = [['Resting HR', 'rhr'], ['HRV', 'hrv'], ['Sleep', 'sleep_min'], ['Steps', 'steps'], ['Brisk movement', 'exercise'], ['Active energy', 'energy'], ['Breathing rate', 'resp'], ['Wrist temperature', 'temp'], ['Heart-rate readings (spikes)', 'hr_above_min']];
 
   const makeToken = () => {
     const bytes = new Uint8Array(24);

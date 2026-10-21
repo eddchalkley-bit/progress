@@ -64,6 +64,8 @@ export function makeDemoData(today, days = 84) {
     push('rhr', rhr);
     push('hrv', hrv);
     push('hr', rhr + 14 + (r() - 0.5) * 4);
+    push('resp', Math.round((14.2 + (r() - 0.5) * 1.2) * 10) / 10);
+    push('temp', Math.round((35.6 + (r() - 0.5) * 0.4) * 100) / 100);
     push('sleep_min', Math.round(sleepMin));
     push('deep_min', Math.round(sleepMin * 0.13));
     push('rem_min', Math.round(sleepMin * 0.21));

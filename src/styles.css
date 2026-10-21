@@ -506,3 +506,51 @@ input[type=range]::-webkit-slider-thumb { margin-top: -9px; border: 0; box-shado
 .t-vlabel { fill: var(--ink); font-size: 10px; font-weight: 600; }
 .segmented.five { grid-template-columns: repeat(5, 1fr); }
 .segmented.five button { font-size: 16px; font-weight: 600; }
+
+/* ---------- Recovery ---------- */
+.recovery { --rc: var(--green); }
+.recovery.rec-moderate { --rc: var(--amber); }
+.recovery.rec-low { --rc: var(--red); }
+.rec-score { font-size: 46px; font-weight: 700; line-height: 1; color: var(--rc); letter-spacing: -0.02em; }
+.rec-score .unit { font-size: 20px; font-weight: 600; margin-left: 2px; }
+.rec-bar { height: 8px; border-radius: 999px; background: var(--soft); margin: 12px 0 14px; overflow: hidden; }
+.rec-bar > div { height: 100%; border-radius: 999px; background: var(--rc); }
+.rec-drivers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rec-drivers > div { background: var(--soft); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.rec-drivers span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.rec-drivers strong { font-size: 24px; font-weight: 700; }
+.rec-drivers strong small { font-size: 13px; font-weight: 500; color: var(--muted); }
+.rec-drivers em { font-style: normal; font-size: 12.5px; color: var(--muted); }
+.rec-drivers .off em { color: var(--red); }
+.rec-drivers .good em { color: var(--green); }
+.health { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+.health-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.hchip { display: inline-flex; align-items: center; gap: 6px; background: var(--soft); border-radius: 999px; padding: 5px 10px 5px 5px; font-size: 12.5px; }
+.hchip i { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 700; background: var(--green-bg); color: var(--green); }
+.hchip.off i { background: var(--amber-bg); color: var(--amber); }
+.hchip.learning i { background: var(--line); color: var(--muted); }
+.hchip span { color: var(--muted); }
+.hchip b { font-weight: 650; }
+.hchip b small { font-weight: 500; color: var(--muted); margin-left: 1px; }
+
+/* ---------- Recovery vs activity ---------- */
+.bal-verdict { font-size: 12px; font-weight: 650; padding: 3px 9px; border-radius: 999px; background: var(--soft); color: var(--muted); }
+.bal-verdict.good { background: var(--green-bg); color: var(--green); }
+.bal-verdict.warn { background: var(--amber-bg); color: var(--amber); }
+.bal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 4px 0 8px; }
+.bal-col { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.bal-rec { font-size: 12px; font-weight: 700; min-width: 30px; text-align: center; padding: 3px 0; border-radius: 8px; background: var(--soft); color: var(--muted); }
+.bal-rec.good { background: var(--green-bg); color: var(--green); }
+.bal-rec.moderate { background: var(--amber-bg); color: var(--amber); }
+.bal-rec.low { background: var(--red-bg); color: var(--red); }
+.bal-track { position: relative; width: 100%; max-width: 30px; height: 90px; background: var(--soft); border-radius: 8px; overflow: hidden; }
+.bal-fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--accent, var(--green)); opacity: 0.55; border-radius: 8px 8px 0 0; }
+.bal-fill.over { background: var(--amber); opacity: 0.9; }
+.bal-fill.partial { opacity: 0.3; }
+.bal-limit { position: absolute; left: -2px; right: -2px; height: 2px; background: var(--ink, currentColor); }
+.bal-day { font-size: 11.5px; color: var(--muted); }
+.bal-key { display: flex; gap: 14px; flex-wrap: wrap; }
+.bal-key i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.k-rec { background: var(--green-bg); border: 1px solid var(--green); }
+.k-bar { background: var(--accent, var(--green)); opacity: 0.55; }
+.k-lim { height: 2px !important; width: 12px !important; background: var(--ink, currentColor); vertical-align: 3px !important; }

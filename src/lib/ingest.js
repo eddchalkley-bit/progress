@@ -16,6 +16,7 @@ const ALIASES = {
   'exercise minutes': 'exercise', 'exercise time': 'exercise',
   'walking heart rate': 'walkhr', 'respiratory rate': 'resp',
   'blood oxygen': 'spo2', oxygen: 'spo2', 'sleep analysis': 'sleep',
+  'wrist temperature': 'temp', 'sleeping wrist temperature': 'temp', 'apple sleeping wrist temperature': 'temp', wristtemp: 'temp',
   hrsample: 'hrs', 'heart rate sample': 'hrs', 'heart rate samples': 'hrs',
 };
 

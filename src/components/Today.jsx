@@ -6,6 +6,7 @@ import { Logo } from './Logo.jsx';
 import { dayPlan, noticings } from '../lib/suggestions.js';
 import { SpikesCard } from './Spikes.jsx';
 import { fmtHM } from '../lib/screens.js';
+import { RecoveryCard, BalanceCard } from './Recovery.jsx';
 
 const fmt = (v) => (v == null ? '–' : Math.round(v).toLocaleString('en-GB'));
 
@@ -106,6 +107,9 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
       {a.redFlag && <div className="flag-banner">{a.redFlag}</div>}
 
       <Glance a={a} plan={plan} />
+
+      <RecoveryCard a={a} />
+      <BalanceCard a={a} />
 
       {plan.tips.length > 0 && (
         <section className="card tip-card">
