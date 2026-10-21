@@ -43,6 +43,14 @@ alter table checkins add column if not exists rests smallint;
 alter table checkins add column if not exists food smallint;
 alter table checkins add column if not exists phone_hours numeric(4,1);
 alter table checkins add column if not exists laptop_hours numeric(4,1);
+-- morning check-in (same row as the end-of-day one)
+alter table checkins add column if not exists am_fatigue   smallint;
+alter table checkins add column if not exists am_brain_fog smallint;
+alter table checkins add column if not exists am_breath    smallint;
+alter table checkins add column if not exists am_aches     smallint;
+alter table checkins add column if not exists am_heart     smallint;
+alter table checkins add column if not exists am_rested    smallint;   -- 0 exhausted .. 3 refreshed
+alter table checkins add column if not exists am_at        timestamptz;
 
 create table if not exists quick_logs (
   id      bigint generated always as identity primary key,

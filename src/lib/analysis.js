@@ -67,17 +67,30 @@ export function buildDays(data, today) {
   const start = dates.length ? dates[0] : today;
   return dateRange(start, today).map((date) => {
     const d = map.get(date) || { date };
+    d.morning = morningScore(d);
+    d.evening = eveningScore(d);
     d.symptom = symptomScore(d);
     d.pem = Boolean(d.checkin?.pem);
     return d;
   });
 }
 
+// Morning check-in (am_ fields) and end-of-day check-in, each 0–10.
+export function morningScore(d) {
+  if (!d.checkin) return null;
+  return mean(SYMPTOMS.map((s) => (d.checkin[`am_${s.key}`] == null ? null : Number(d.checkin[`am_${s.key}`]))));
+}
+export function eveningScore(d) {
+  if (!d.checkin) return null;
+  return mean(SYMPTOMS.map((s) => (d.checkin[s.key] == null ? null : Number(d.checkin[s.key]))));
+}
+
+// The day's score: the end-of-day check-in, or the morning one if that's all there is.
 export function symptomScore(d) {
-  if (d.checkin) {
-    const v = mean(SYMPTOMS.map((s) => (d.checkin[s.key] == null ? null : Number(d.checkin[s.key]))));
-    if (v != null) return v;
-  }
+  const ev = eveningScore(d);
+  if (ev != null) return ev;
+  const am = morningScore(d);
+  if (am != null) return am;
   if (d.quick?.length) {
     const e = mean(d.quick.map((q) => (q.energy == null ? null : Number(q.energy))));
     if (e != null) return 10 - e; // energy 10 = great  ->  symptom 0

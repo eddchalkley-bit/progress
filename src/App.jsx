@@ -35,6 +35,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('today');
   const [logDate, setLogDate] = useState(today);
+  const [logMode, setLogMode] = useState(null);
 
   const load = useCallback(async () => {
     setError('');
@@ -57,7 +58,7 @@ export default function App() {
 
   const onSaveCheckin = async (checkin) => {
     if (demo) {
-      setData((d) => ({ ...d, checkins: [...d.checkins.filter((c) => c.date !== checkin.date), checkin] }));
+      setData((d) => ({ ...d, checkins: [...d.checkins.filter((c) => c.date !== checkin.date), { ...(d.checkins.find((c) => c.date === checkin.date) || {}), ...checkin }] }));
       return;
     }
     await saveCheckin(checkin);
@@ -82,7 +83,7 @@ export default function App() {
 
   const onToken = (t) => { setToken(t); t = getToken(); setTok(t); setError(''); if (t) { setDemoPref(false); setDemo(false); } };
   const onDemo = (on) => { setDemoPref(on); setDemo(on); };
-  const goLog = (date = today) => { setLogDate(date); setTab('log'); window.scrollTo(0, 0); };
+  const goLog = (date = today, mode = null) => { setLogDate(date); setLogMode(mode); setTab('log'); window.scrollTo(0, 0); };
 
   return (
     <div className="app">
@@ -106,7 +107,7 @@ export default function App() {
         ) : (
           <>
             {tab === 'today' && <Today a={analysis} data={data} onCheckIn={goLog} onRefresh={load} loading={loading} onTag={onTag} />}
-            {tab === 'log' && <LogView a={analysis} date={logDate} setDate={setLogDate} today={today} onSave={onSaveCheckin} />}
+            {tab === 'log' && <LogView a={analysis} date={logDate} setDate={setLogDate} mode={logMode} setMode={setLogMode} today={today} onSave={onSaveCheckin} />}
             {tab === 'insights' && <Insights a={analysis} research={data?.research} onReview={onReview} demo={demo} />}
             {tab === 'settings' && <Settings token={token} onToken={onToken} demo={demoPref} onDemo={onDemo} data={data} a={analysis} onResearchRefresh={onResearchRefresh} demoOnly={DEMO_ONLY} />}
           </>

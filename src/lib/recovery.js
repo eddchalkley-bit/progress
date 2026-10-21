@@ -101,7 +101,7 @@ export function balanceSummary(rows) {
   else { verdict = 'Pushing past your limits'; tone = 'warn'; }
   let text;
   if (!full.length) text = 'Needs a few days of recovery and activity data.';
-  else if (over === 0) text = `You stayed within your limit on all ${full.length} days. Keeping it this way gives your body the best chance to recover.`;
+  else if (over === 0) text = full.length === 1 ? 'You stayed within your limit yesterday.' : `You stayed within your limit on all ${full.length} days. Keeping it this way gives your body the best chance to recover.`;
   else if (lowOver) text = `You went over on ${over} of ${full.length} days, including ${lowOver === 1 ? 'a low-recovery day' : `${lowOver} low-recovery days`}. Those are the days to protect most.`;
   else text = `You went over on ${over} of ${full.length} days. Try to bring the busier days down, especially when recovery is moderate or low.`;
   return { over, total: full.length, verdict, tone, text };

@@ -85,7 +85,7 @@ export function BalanceCard({ a }) {
         <span><i className="k-bar" />Activity</span>
         <span><i className="k-lim" />Your limit</span>
       </div>
-      <p>{sum.total > 0 && <b>Over your limit {sum.over} of {sum.total} days. </b>}{sum.text}</p>
+      <p>{sum.total > 1 && <b>Over your limit {sum.over} of {sum.total} days. </b>}{sum.text}</p>
       <p className="muted small">Activity is your {basis} compared with a usual day. The limit drops on low-recovery days; staying under it is the aim. Today is so far.</p>
     </section>
   );

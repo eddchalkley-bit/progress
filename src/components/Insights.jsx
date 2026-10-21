@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { fmtMinutes, fmtDay } from '../lib/time.js';
 import WhatWorked from './WhatWorked.jsx';
 import { PRINCIPLES, SOURCES, RED_FLAGS, REVIEWED } from '../lib/research.js';
+import { SYMPTOMS } from '../lib/analysis.js';
 
 const fmt = (v) => (v == null ? '–' : Math.round(v).toLocaleString('en-GB'));
 const PILL = {
@@ -130,6 +131,8 @@ export default function Insights({ a, research, onReview, demo }) {
 
       <ProgressOverTime a={a} />
 
+      <MorningEvening a={a} />
+
       <section className="card">
         <div className="card-head"><h3>Your baseline</h3><span className="muted small">last 28 days</span></div>
         <div className="kv-grid">
@@ -218,5 +221,49 @@ export default function Insights({ a, research, onReview, demo }) {
       <Evidence />
       <Research research={research} onReview={onReview} demo={demo} />
     </div>
+  );
+}
+
+// How symptoms change from first thing to the end of the day, over the last 30 days.
+function MorningEvening({ a }) {
+  const both = a.days.slice(-30).filter((d) => d.morning != null && d.evening != null);
+  const amOnly = a.days.slice(-30).filter((d) => d.morning != null).length;
+  if (!amOnly) return null;
+  const avg = (xs) => xs.reduce((s, v) => s + v, 0) / xs.length;
+  if (both.length < 3) {
+    return (
+      <section className="card">
+        <div className="card-head"><h3>Morning vs end of day</h3></div>
+        <p className="muted small">Do both check-ins on a few days and this will show whether your symptoms are worse first thing or build up through the day. {both.length} of 3 days so far.</p>
+      </section>
+    );
+  }
+  const am = avg(both.map((d) => d.morning)), pm = avg(both.map((d) => d.evening));
+  const worseEve = both.filter((d) => d.evening - d.morning >= 1).length;
+  const worseAm = both.filter((d) => d.morning - d.evening >= 1).length;
+  const per = SYMPTOMS.map((s) => {
+    const pairs = both.map((d) => [d.checkin[`am_${s.key}`], d.checkin[s.key]]).filter(([x, y]) => x != null && y != null);
+    return pairs.length ? { label: s.label, am: avg(pairs.map((p) => Number(p[0]))), pm: avg(pairs.map((p) => Number(p[1]))) } : null;
+  }).filter(Boolean);
+  const gap = pm - am;
+  const headline = gap <= -0.7 ? 'Mornings are usually your hardest time' : gap >= 0.7 ? 'Symptoms usually build through the day' : 'Mornings and evenings are usually similar';
+  return (
+    <section className="card">
+      <div className="card-head"><h3>Morning vs end of day</h3><span className="muted small">{both.length} days</span></div>
+      <p><b>{headline}.</b> Morning average {am.toFixed(1)}, end of day {pm.toFixed(1)}. Worse by the evening on {worseEve} {worseEve === 1 ? 'day' : 'days'}, worse first thing on {worseAm}.</p>
+      <div className="me-list">
+        {per.map((r) => (
+          <div key={r.label} className="me-row">
+            <span>{r.label}</span>
+            <div className="me-bars">
+              <i className="me-am" style={{ width: `${r.am * 10}%` }} />
+              <i className="me-pm" style={{ width: `${r.pm * 10}%` }} />
+            </div>
+            <b>{r.am.toFixed(1)} → {r.pm.toFixed(1)}</b>
+          </div>
+        ))}
+      </div>
+      <p className="muted small"><i className="me-key me-am" /> Morning <i className="me-key me-pm" /> End of day</p>
+    </section>
   );
 }

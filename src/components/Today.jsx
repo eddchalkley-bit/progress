@@ -65,7 +65,16 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
   const planMax = plan.budget ? Math.max(plan.budget, plan.steps) * 1.1 : 1;
 
   const dateLabel = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-  const checkedIn = Boolean(t.checkin);
+  const hasAm = t.morning != null;
+  const hasPm = t.evening != null;
+  const checkedIn = hasPm;
+  const hour = new Date().getHours();
+  const cta = !hasAm && !hasPm && hour < 14
+    ? { mode: 'morning', title: 'Morning check-in', sub: 'How are you as the day starts? Takes 30 seconds', done: false }
+    : !hasPm
+      ? { mode: 'evening', title: hour < 17 ? 'End-of-day check-in' : 'How was today?', sub: hasAm ? 'Symptoms, screens and social — compared with this morning' : 'Log symptoms, screens and social — takes a minute', done: false, later: hour < 17 && hasAm }
+      : { mode: 'evening', title: 'Checked in today', sub: 'Tap to update your check-in', done: true };
+  const ydPm = y?.evening;
   const showWorked = s.level === 'amber' || s.level === 'red' || plan.recovery.active;
 
   return (
@@ -118,13 +127,14 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
         </section>
       )}
 
-      <button className={`checkin-cta ${checkedIn ? 'done' : ''}`} onClick={() => onCheckIn()}>
+      <button className={`checkin-cta ${cta.done || cta.later ? 'done' : ''}`} onClick={() => onCheckIn(undefined, cta.mode)}>
         <div>
-          <strong>{checkedIn ? 'Checked in today' : 'How are you today?'}</strong>
-          <span>{checkedIn ? 'Tap to update your check-in' : 'Log symptoms, screens and social — takes a minute'}</span>
+          <strong>{cta.later ? 'Morning check-in done' : cta.title}</strong>
+          <span>{cta.later ? 'End-of-day check-in later — symptoms, screens and social' : cta.sub}</span>
         </div>
         <span className="chev">›</span>
       </button>
+      {(hasAm || hasPm) && <DayCompare yPm={ydPm} am={t.morning} pm={t.evening} />}
       {!y?.checkin && days.length > 1 && (
         <button className="link-btn" onClick={() => onCheckIn(y.date)}>Missed yesterday? Add yesterday’s check-in</button>
       )}
@@ -281,4 +291,41 @@ function Glance({ a, plan }) {
 function fmtK(v) {
   if (v == null) return '–';
   return v >= 10000 ? `${(v / 1000).toFixed(1)}k` : Math.round(v).toLocaleString('en-GB');
+}
+
+// Last night → this morning → end of day, on the 0–10 symptom scale.
+function DayCompare({ yPm, am, pm }) {
+  const steps = [];
+  if (yPm != null && am != null) steps.push({ label: 'Last evening', v: yPm });
+  if (am != null) steps.push({ label: 'This morning', v: am });
+  if (pm != null) steps.push({ label: 'End of day', v: pm });
+  if (steps.length < 2) return null;
+  const change = (x, y) => {
+    const d = y - x;
+    if (Math.abs(d) < 0.5) return { t: 'same', c: '' };
+    return { t: `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}`, c: d > 0 ? 'worse' : 'better' };
+  };
+  let note = '';
+  if (am != null && pm != null) {
+    const d = pm - am;
+    note = d >= 1 ? 'Symptoms built up through the day — a sign the day asked a lot of you.'
+      : d <= -1 ? 'Better by the evening than first thing — mornings seem to be your hardest time.'
+      : 'Much the same morning and evening.';
+  } else if (yPm != null && am != null) {
+    note = am - yPm >= 1 ? 'Worse this morning than last night — go gently today.' : am - yPm <= -1 ? 'Better than last night — the rest helped.' : 'Overnight, much the same.';
+  }
+  return (
+    <section className="card day-compare">
+      <div className="dc-row">
+        {steps.map((s, i) => (
+          <div key={s.label} className="dc-step">
+            {i > 0 && <span className={`dc-change ${change(steps[i - 1].v, s.v).c}`}>{change(steps[i - 1].v, s.v).t}</span>}
+            <div className="dc-val">{s.v.toFixed(1)}</div>
+            <div className="dc-label">{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <p className="muted small">{note} Symptom average, 0 none · 10 worst.</p>
+    </section>
+  );
 }
