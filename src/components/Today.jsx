@@ -122,9 +122,9 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
 
       <Glance a={a} plan={plan} sleep={sleep} />
 
-      <SleepCard s={sleep} energy={energy} />
-
       <EnergyCard e={energy} onLogCrash={() => onCheckIn(undefined, 'evening')} />
+
+      <SleepCard s={sleep} energy={energy} />
 
       <RecoveryCard a={a} />
       <BalanceCard a={a} />
