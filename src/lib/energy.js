@@ -37,8 +37,10 @@ export function dayLoad(d, k = ENERGY) {
  * a:      result of analyse()
  * factor: today's capacity multiplier (dayPlan's factor: green 1, amber 0.7, red 0.5, recovery lower)
  * frac:   share of the waking day gone (dayPlan's hourFrac) — used for the "even pace" marker
+ * potential: what last night's sleep and overnight recovery did to today's capacity
+ *            (analyseSleep().potential, ×your normal, 0.7–1.1)
  */
-export function energyBudget(a, factor = 1, frac = null, k = ENERGY) {
+export function energyBudget(a, factor = 1, frac = null, potential = 1, k = ENERGY) {
   const days = a.days, t = days.length - 1;
   const flags = a.crashes?.flags || [];
   const L = (i) => (i >= 0 ? dayLoad(days[i], k).total : 0);
@@ -70,8 +72,13 @@ export function energyBudget(a, factor = 1, frac = null, k = ENERGY) {
   const carry = k.carry1 * L(t - 1) + k.carry2 * L(t - 2);
   const today = dayLoad(days[t], k);
   const used = today.total;
-  const budget = Math.max(0, baseline * factor - carry);
-  const crashLine = Math.max(budget * 1.05, crashW - carry);
+  // A poor night lowers both today's budget and how much you can take before crashing.
+  // A great night raises your potential, but the budget doesn't rise past your normal:
+  // banking a good night is what builds the baseline.
+  const sleepCap = Math.min(1, potential);
+  const potentialEU = baseline * potential - carry;
+  const budget = Math.max(0, baseline * Math.min(factor, sleepCap) - carry);
+  const crashLine = Math.max(budget * 1.05, crashW * Math.min(1.05, potential) - carry);
   const amberLine = Math.max(budget, crashLine * k.amberAt);
   const byNow = frac != null && frac > 0.05 && frac < 1 ? budget * frac : null;
 
@@ -85,7 +92,8 @@ export function energyBudget(a, factor = 1, frac = null, k = ENERGY) {
     used: r(used), physical: r(today.physical), stress: r(today.stress),
     budget: r(budget), crashLine: r(crashLine), amberLine: r(amberLine),
     byNow: byNow != null ? r(byNow) : null,
-    carry: r(carry), normal: r(baseline), factor,
+    carry: r(carry), normal: r(baseline), factor, potential, potentialEU: r(Math.max(0, potentialEU)),
+    sleepDelta: r(baseline * (potential - 1)),
     status, learned, crashesLogged: crashLoads.length,
     yesterday: r(L(t - 1)),
   };

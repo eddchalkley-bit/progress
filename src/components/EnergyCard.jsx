@@ -1,5 +1,3 @@
-import { energyBudget } from '../lib/energy.js';
-
 const STATUS = {
   green: 'Within budget',
   amber: 'Near your limit',
@@ -7,8 +5,8 @@ const STATUS = {
 };
 
 // Today's energy: used so far vs today's budget vs the predicted crash line.
-export default function EnergyCard({ a, plan, onLogCrash }) {
-  const e = energyBudget(a, plan?.factor ?? 1, plan?.hourFrac ?? null);
+// e = energyBudget(...) — worked out once in Today so the sleep card can show the same numbers.
+export default function EnergyCard({ e, onLogCrash }) {
 
   if (!e.ready) {
     return (
@@ -68,7 +66,10 @@ export default function EnergyCard({ a, plan, onLogCrash }) {
 
       <p className="muted small en-foot">
         {e.carry > 0 && <>Budget is {e.carry} EU lower for load carried over from the last two days. </>}
-        {e.factor < 1 && <>Set to {Math.round(e.factor * 100)}% of your normal because of today’s status. </>}
+        {e.potential < 1 && e.factor >= e.potential && <>Lowered to {Math.round(e.potential * 100)}% of your normal after last night. </>}
+        {e.factor < 1 && e.factor < e.potential && <>Set to {Math.round(e.factor * 100)}% of your normal because of today’s status. </>}
+        {e.potential > 1 && e.factor >= 1 && <>Last night lifted your potential to {e.potentialEU} EU, but the budget stays at your normal so you bank it. </>}
+        {e.potential > 1 && e.factor < 1 && <>Last night helped, but today’s status still calls for a lighter day. </>}
         {e.learned
           ? `Crash line learned from your last ${e.crashesLogged} crashes.`
           : <>Crash line is an estimate until you’ve flagged {2 - e.crashesLogged} more crash{2 - e.crashesLogged === 1 ? '' : 'es'}. <button className="link-btn" onClick={onLogCrash}>Flag a crash</button></>}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CopyIcon, WatchIcon } from './Icons.jsx';
 import { SYMPTOMS } from '../lib/analysis.js';
 import { TAGS } from '../lib/spikes.js';
+import { rebuildSleep } from '../lib/api.js';
 
 function Copy({ text, label }) {
   const [done, setDone] = useState(false);
@@ -55,6 +56,20 @@ function exportCsv(a) {
   const link = document.createElement('a');
   link.href = url; link.download = `progress-${a.today}.csv`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function SleepRebuild() {
+  const [state, setState] = useState('');
+  return (
+    <>
+      <button className="secondary" disabled={state === 'running'} onClick={async () => {
+        setState('running');
+        try { const r = await rebuildSleep(); setState(`${r.message} Reloading…`); setTimeout(() => window.location.reload(), 1200); }
+        catch (e) { setState(e.message); }
+      }}>{state === 'running' ? 'Rebuilding…' : 'Rebuild sleep history'}</button>
+      {state && state !== 'running' && <p className="muted small">{state}</p>}
+    </>
+  );
 }
 
 function ResearchCheck({ onRun }) {
@@ -248,6 +263,12 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
         <div className="card-head"><h3>Your data</h3></div>
         <p className="muted small">Stored only in your own Supabase database. Export a spreadsheet to take to appointments.</p>
         <button className="secondary" onClick={() => exportCsv(a)}>Export CSV</button>
+        {token && !demo && (
+          <>
+            <p className="muted small">Recalculates bedtime, wake time and wake-ups for every night already stored. Run once after updating, or if sleep looks wrong.</p>
+            <SleepRebuild />
+          </>
+        )}
       </section>}
 
       <p className="muted small center">Progress v0.1 · not a medical device</p>

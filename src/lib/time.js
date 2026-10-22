@@ -13,6 +13,20 @@ export function localHour(date, tz = DEFAULT_TZ) {
   return Number(h);
 }
 
+// Minutes since local midnight (0–1439).
+export function localMinutes(date, tz = DEFAULT_TZ) {
+  const p = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .formatToParts(date).reduce((o, x) => ((o[x.type] = x.value), o), {});
+  return Number(p.hour) * 60 + Number(p.minute);
+}
+
+// Clock time from minutes relative to midnight (negative = the evening before): -27 → "23:33".
+export function fmtClock(min) {
+  if (min == null || Number.isNaN(min)) return '–';
+  const m = ((Math.round(min) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
 export function addDays(dateStr, n) {
   const d = new Date(dateStr + 'T12:00:00Z');
   d.setUTCDate(d.getUTCDate() + n);

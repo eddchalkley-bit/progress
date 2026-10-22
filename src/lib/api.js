@@ -37,3 +37,4 @@ export const saveCheckin = (c) => call('/api/checkin', { method: 'POST', body: J
 export const refreshResearch = () => call('/api/research-refresh', { method: 'POST' });
 export const reviewResearch = (id) => call('/api/research-review', { method: 'POST', body: JSON.stringify({ id }) });
 export const tagSpike = (id, tag) => call('/api/tag', { method: 'POST', body: JSON.stringify({ id, tag }) });
+export const rebuildSleep = () => call('/api/sleep-rebuild', { method: 'POST' });

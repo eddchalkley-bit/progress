@@ -8,6 +8,9 @@ import { SpikesCard } from './Spikes.jsx';
 import { fmtHM } from '../lib/screens.js';
 import { RecoveryCard, BalanceCard } from './Recovery.jsx';
 import EnergyCard from './EnergyCard.jsx';
+import SleepCard from './SleepCard.jsx';
+import { analyseSleep } from '../lib/sleep.js';
+import { energyBudget } from '../lib/energy.js';
 
 const fmt = (v) => (v == null ? '–' : Math.round(v).toLocaleString('en-GB'));
 
@@ -62,6 +65,8 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
 
 
   const plan = dayPlan(a);
+  const sleep = analyseSleep(a);
+  const energy = energyBudget(a, plan.factor, plan.hourFrac, sleep.potential);
   const notes = noticings(a);
   const planMax = plan.budget ? Math.max(plan.budget, plan.steps) * 1.1 : 1;
 
@@ -116,9 +121,11 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
 
       {a.redFlag && <div className="flag-banner">{a.redFlag}</div>}
 
-      <Glance a={a} plan={plan} />
+      <Glance a={a} plan={plan} sleep={sleep} />
 
-      <EnergyCard a={a} plan={plan} onLogCrash={() => onCheckIn(undefined, 'evening')} />
+      <SleepCard s={sleep} energy={energy} />
+
+      <EnergyCard e={energy} onLogCrash={() => onCheckIn(undefined, 'evening')} />
 
       <RecoveryCard a={a} />
       <BalanceCard a={a} />
@@ -230,7 +237,6 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
             <p className="muted small">The line is where you should be. Tap a bar to see that day.</p>
             <TargetLegend />
           </div>
-          <TargetCard spec={specs.sleep} days={last14} />
           {specs.steps && <TargetCard spec={specs.steps} days={last14.slice(0, -1)} title="Steps (full days)" />}
           {specs.rhr && <TargetCard spec={specs.rhr} days={last14} />}
           {specs.hrv && <TargetCard spec={specs.hrv} days={last14} />}
@@ -242,7 +248,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
 }
 
 // Four numbers that answer "how am I doing?" at a glance.
-function Glance({ a, plan }) {
+function Glance({ a, plan, sleep: sl }) {
   const days = a.days, t = days[days.length - 1], y = days[days.length - 2] || {};
   const b = a.baseline;
   const tiles = [];
@@ -250,8 +256,8 @@ function Glance({ a, plan }) {
   const sleep = t.sleep_min;
   tiles.push({
     label: 'Sleep', value: sleep != null ? fmtMinutes(sleep) : '–', sub: 'last night',
-    tone: sleep == null ? '' : sleep >= 420 ? 'ok' : sleep >= 360 ? 'warn' : 'bad',
-    note: sleep == null ? 'No data yet' : sleep >= 420 ? 'Good amount' : 'Under 7 hours',
+    tone: sleep == null ? '' : sleep >= sl.need - 15 ? 'ok' : sleep >= sl.need - 60 ? 'warn' : 'bad',
+    note: sleep == null ? 'No data yet' : sleep >= sl.need - 15 ? `Met your ${fmtMinutes(sl.need)}` : `${fmtMinutes(sl.need - sleep)} under your need`,
   });
 
   const rhr = t.rhr ?? y.rhr;

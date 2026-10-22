@@ -70,7 +70,12 @@ export function makeDemoData(today, days = 84) {
     push('deep_min', Math.round(sleepMin * 0.13));
     push('rem_min', Math.round(sleepMin * 0.21));
     push('core_min', Math.round(sleepMin * 0.66));
-    push('awake_min', Math.round(15 + load * 8 + r() * 15));
+    const awake = Math.round(15 + load * 8 + r() * 15);
+    push('awake_min', awake);
+    const bed = Math.round(-40 + load * 25 + (weekend ? 35 : 0) + (r() - 0.5) * 70);
+    push('bed_min', bed);
+    push('wake_min', bed + Math.round(sleepMin) + awake + 10);
+    push('wakeups', Math.max(0, Math.round(load * 1.2 + r() * 2.6)));
 
     if (!isToday && r() < 0.88) {
       const v = (bias) => Math.max(0, Math.min(10, Math.round(sym + bias + (r() - 0.5) * 2)));

@@ -1,6 +1,6 @@
 // Progress analysis — pure functions, used by the app and by /api/status.
 // Symptom score: 0–10, higher = worse. Every comparison is against YOUR OWN rolling baseline.
-import { addDays, dateRange, daysBetween, fmtMinutes } from './time.js';
+import { addDays, dateRange, daysBetween, fmtMinutes, fmtClock } from './time.js';
 import { screenHours } from './screens.js';
 
 export const SYMPTOMS = [
@@ -223,6 +223,12 @@ export const FACTORS = [
   { key: 'sleep', label: 'Sleep', group: 'Body signals', lag: 0, precursor: true, lowerIsRisk: true, get: (d) => d.sleep_min ?? null,
     high: (t) => `nights with more sleep (over ${fmtMinutes(t)})`,
     precursorText: (avg, normal) => `Less sleep (${fmtMinutes(avg)} vs ${fmtMinutes(normal)})` },
+  { key: 'bedtime', label: 'Bedtime', group: 'Body signals', lag: 0, precursor: true, get: (d) => d.bed_min ?? null,
+    high: (t) => `nights you went to sleep later (after ${fmtClock(t)})`,
+    precursorText: (avg, normal) => `Later bedtimes (${fmtClock(avg)} vs ${fmtClock(normal)})` },
+  { key: 'wakeups', label: 'Night wake-ups', group: 'Body signals', lag: 0, precursor: true, get: (d) => d.wakeups ?? null,
+    high: (t) => `more broken nights (over ${Math.round(t)} wake-ups)`,
+    precursorText: (avg, normal) => `More broken sleep (${avg.toFixed(1)} vs ${normal.toFixed(1)} wake-ups)` },
   { key: 'hrv', label: 'HRV', group: 'Body signals', lag: 0, precursor: false, get: (d) => d.hrv ?? null,
     high: (t) => `higher-HRV days (over ${Math.round(t)} ms)` },
   { key: 'rhr', label: 'Resting heart rate', group: 'Body signals', lag: 0, precursor: false, get: (d) => d.rhr ?? null,

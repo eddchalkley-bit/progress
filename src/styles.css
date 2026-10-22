@@ -620,3 +620,62 @@ input[type=range]::-webkit-slider-thumb { margin-top: -9px; border: 0; box-shado
 .en-legend .sw-stress { background: var(--accent); }
 .en-legend .dot-now { width: 9px; height: 9px; border: 0; background: var(--ink); }
 .en-foot { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); line-height: 1.45; }
+
+/* ---------- Last night (sleep coach) ---------- */
+.sleep .sl-hero { margin: 2px 0 14px; }
+.sleep .sl-big { font-family: var(--display); font-size: 40px; font-weight: 600; line-height: 1.05; letter-spacing: -0.01em; }
+.sleep .sl-sub { font-size: 14px; color: var(--muted); margin-top: 4px; }
+.sleep .sl-sub b { color: var(--ink); font-weight: 650; }
+.sl-rows { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 12px; }
+.sl-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sl-label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.sl-val { font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.sl-meter { height: 6px; border-radius: 999px; background: var(--soft); margin: 6px 0 4px; overflow: hidden; }
+.sl-meter i { display: block; height: 100%; border-radius: 999px; background: var(--accent-2); }
+.sl-meter i.good { background: var(--green); }
+.sl-meter i.warn { background: var(--amber); }
+.sl-meter i.bad { background: var(--red); }
+.sl-note { font-size: 13px; color: var(--muted); }
+.sl-body { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.sl-chip { font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+.sl-chip.recovered { background: var(--green-bg); color: var(--green); }
+.sl-chip.partly { background: var(--amber-bg); color: var(--amber); }
+.sl-chip.strained { background: var(--red-bg); color: var(--red); }
+.sl-chip.plain { background: var(--soft); color: var(--muted); }
+.sl-impact { background: var(--soft); border-radius: 16px; padding: 12px 14px; margin-bottom: 16px; }
+.sl-impact.up { background: var(--green-bg); }
+.sl-impact.down { background: var(--amber-bg); }
+.sl-impact > div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sl-impact-k { font-size: 14px; font-weight: 600; }
+.sl-impact-v { font-family: var(--display); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sl-impact.up .sl-impact-v { color: var(--green); }
+.sl-impact.down .sl-impact-v { color: var(--amber); }
+.sl-impact-v small { font-family: var(--body); font-size: 13px; font-weight: 600; color: var(--muted); }
+.sl-impact p { font-size: 13px; color: var(--muted); margin: 4px 0 0; line-height: 1.4; }
+.sl-week { margin: 0 0 12px; }
+.sl-week figcaption { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.sl-week .debt { color: var(--muted); font-weight: 500; }
+.sl-week .debt.warn { color: var(--amber); font-weight: 600; }
+.sl-week svg { width: 100%; height: auto; display: block; overflow: visible; }
+.sl-week .b.ok { fill: var(--on); }
+.sl-week .b.short { fill: var(--amber); opacity: 0.75; }
+.sl-week .b.last.ok { fill: var(--accent); }
+.sl-week .b.last.short { opacity: 1; }
+.sl-week .b.nap { fill: var(--band); }
+.sl-week .need { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.sl-week .need-l { font-size: 11px; font-weight: 650; fill: var(--ink); }
+.sl-week .d { font-size: 11px; fill: var(--muted); }
+.sl-week .o.good { fill: var(--green); }
+.sl-week .o.bad { fill: var(--red); }
+.sl-week-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.sl-week-key span { display: inline-flex; align-items: center; gap: 5px; }
+.sl-week-key i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.sl-week-key .k-ok { background: var(--on); }
+.sl-week-key .k-short { background: var(--amber); }
+.sl-week-key .o-good, .sl-week-key .o-bad { border-radius: 50%; width: 7px; height: 7px; }
+.sl-week-key .o-good { background: var(--green); }
+.sl-week-key .o-bad { background: var(--red); }
+.sl-coach { list-style: none; padding: 0; margin: 4px 0 10px; display: grid; gap: 8px; }
+.sl-coach li { font-size: 14.5px; line-height: 1.45; padding-left: 14px; position: relative; }
+.sl-coach li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.sl-foot { padding-top: 10px; border-top: 1px solid var(--line); margin: 0; }

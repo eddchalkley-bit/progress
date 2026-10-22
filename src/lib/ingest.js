@@ -2,7 +2,7 @@
 // One reading per line:  metric|start|end|value   (or metric|start|value)
 //   steps|2026-10-17T00:00:00+01:00|2026-10-18T00:00:00+01:00|6420
 //   sleep|2026-10-17T23:41:00+01:00|2026-10-18T00:12:00+01:00|Core
-import { localDate, localHour, addDays, DEFAULT_TZ } from './time.js';
+import { localDate, localHour, localMinutes, addDays, DEFAULT_TZ } from './time.js';
 
 export const SUM_METRICS = new Set(['steps', 'energy', 'exercise', 'daylight', 'mindful', 'stand']);
 export const AVG_METRICS = new Set(['rhr', 'hrv', 'hr', 'walkhr', 'resp', 'spo2', 'temp']);
@@ -132,6 +132,34 @@ export function nightOf(endDate, tz = DEFAULT_TZ) {
   return { key: d, nap: true };
 }
 
+function mergeIntervals(intervals) {
+  if (!intervals.length) return [];
+  const sorted = intervals.map((i) => [i[0], i[1]]).sort((a, b) => a[0] - b[0]);
+  const out = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    const last = out[out.length - 1];
+    if (sorted[i][0] <= last[1]) last[1] = Math.max(last[1], sorted[i][1]);
+    else out.push(sorted[i]);
+  }
+  return out;
+}
+
+// Bedtime / wake time as minutes relative to midnight of the wake-up day (22:00 the night before = -120),
+// and the number of times you woke for 5+ minutes between falling asleep and getting up.
+function nightTiming(date, asleep, inbed, tz) {
+  const src = asleep.length ? asleep : inbed;
+  const merged = mergeIntervals(src);
+  if (!merged.length) return null;
+  const rel = (ms) => {
+    const d = new Date(ms);
+    const m = localMinutes(d, tz);
+    return localDate(d, tz) < date ? m - 1440 : m;
+  };
+  let wakeups = 0;
+  if (asleep.length) for (let i = 1; i < merged.length; i++) if (merged[i][0] - merged[i - 1][1] >= 5 * 60000) wakeups++;
+  return { bed: rel(merged[0][0]), wake: rel(merged[merged.length - 1][1]), wakeups: asleep.length ? wakeups : null };
+}
+
 function unionMinutes(intervals) {
   if (!intervals.length) return 0;
   const sorted = intervals.map((i) => [i[0], i[1]]).sort((a, b) => a[0] - b[0]);
@@ -173,6 +201,12 @@ export function summariseNights(samples, tz = DEFAULT_TZ) {
       push('core_min', unionMinutes(n.core));
       push('awake_min', unionMinutes(n.awake));
       if (inbed > 0) push('inbed_min', inbed);
+      const timing = nightTiming(date, n.asleep, n.inbed, tz);
+      if (timing) {
+        out.push({ date, metric: 'bed_min', value: timing.bed });
+        out.push({ date, metric: 'wake_min', value: timing.wake });
+        if (timing.wakeups != null) out.push({ date, metric: 'wakeups', value: timing.wakeups });
+      }
     }
     const napMin = unionMinutes(n.nap);
     if (napMin > 0) out.push({ date, metric: 'nap_min', value: Math.round(napMin) });
