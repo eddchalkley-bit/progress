@@ -122,7 +122,7 @@ function WeekChart({ s }) {
           const short = v != null && v + (x.nap || 0) < s.need - 15;
           const last = i === n - 1;
           return (
-            <g key={x.date}>
+            <g key={x.date} style={{ '--i': i }}>
               {v != null && <rect x={cx - bw / 2} y={y(v)} width={bw} height={base - y(v)} rx="4" className={`b ${short ? 'short' : 'ok'} ${last ? 'last' : ''}`} />}
               {x.nap > 0 && v != null && <rect x={cx - bw / 2} y={y(v + x.nap)} width={bw} height={y(v) - y(v + x.nap)} rx="3" className="b nap" />}
               {x.outcome && <circle cx={cx} cy={base + 10} r="3.5" className={`o ${x.outcome}`} />}

@@ -3,6 +3,7 @@ import { analyse } from './lib/analysis.js';
 import { makeDemoData } from './lib/demo.js';
 import { fetchData, saveCheckin, refreshResearch, reviewResearch, tagSpike, getToken, setToken, getDemoPref, setDemoPref } from './lib/api.js';
 import { localDate } from './lib/time.js';
+import { startReveal } from './lib/reveal.js';
 import Today from './components/Today.jsx';
 import LogView from './components/LogView.jsx';
 import Insights from './components/Insights.jsx';
@@ -46,6 +47,7 @@ export default function App() {
     finally { setLoading(false); }
   }, [demo, today]);
 
+  useEffect(() => startReveal(), []);
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
     const onVis = () => { if (document.visibilityState === 'visible' && !demo) load(); };
@@ -116,7 +118,7 @@ export default function App() {
       <nav className="tabbar" aria-label="Sections">
         {TABS.map(({ id, label, Icon }) => (
           <button key={id} className={tab === id ? 'tab active' : 'tab'} onClick={() => { setTab(id); window.scrollTo(0, 0); }} aria-current={tab === id ? 'page' : undefined}>
-            <Icon />
+            <i className="tab-ico"><Icon /></i>
             <span>{label}</span>
           </button>
         ))}

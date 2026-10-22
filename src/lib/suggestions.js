@@ -2,7 +2,8 @@
 // Rule: Progress never suggests working out or building up activity. The envelope is a
 // ceiling, and spare room is for things you value — not for training.
 import { mean, median } from './analysis.js';
-import { fmtMinutes, fmtDay, addDays } from './time.js';
+import { analyseSleep } from './sleep.js';
+import { fmtMinutes, fmtDay, addDays, fmtClock } from './time.js';
 import { triggerSummary, TAG_BY_ID } from './spikes.js';
 import { screenHours, openLaptop, sessionMinutes, fmtHM } from './screens.js';
 
@@ -76,7 +77,8 @@ export function dayPlan(a, now = new Date()) {
   const tips = [];
   const add = (id, text) => { if (!tips.find((x) => x.id === id)) tips.push({ id, text }); };
   const b = a.baseline;
-  if (today.sleep_min != null && today.sleep_min < 390) add('sleep', `Short night (${fmtMinutes(today.sleep_min)}). Plan a lie-down in the early afternoon, eyes closed, even if you don’t sleep.`);
+  const need = analyseSleep(a).need;
+  if (today.sleep_min != null && today.sleep_min < need - 60) add('sleep', `Short night (${fmtMinutes(today.sleep_min)} vs your ${fmtMinutes(need)}). Plan a lie-down in the early afternoon, eyes closed, even if you don’t sleep.`);
   if (today.hrv != null && b.hrv && today.hrv < b.hrv * 0.9) add('hrv', 'HRV is low this morning. Keep tasks to about 20 minutes, then sit or lie down before the next one.');
   if (today.rhr != null && b.rhr != null && today.rhr - b.rhr >= 3) add('rhr', 'Resting heart rate is up. Do things sitting down where you can — showering, cooking prep, getting dressed.');
   const usualAbove = median(days.slice(-29, -1).map((d) => d.hr_above_min));
@@ -163,12 +165,13 @@ export function noticings(a) {
     else if (c1 > c0 && c1 >= 2) out.push({ tone: 'watch', score: 3, title: 'More crashes this month', text: `${c1} crashes in the last 30 days, compared with ${c0} before. Your envelope may need to come down for a while.` });
   }
 
-  // Sleep under 7h
+  // Sleep against YOUR need (learned from the sleep before your good days)
+  const sl = analyseSleep(a);
   const sleeps = range(t - 6, t + 1).map((d) => d.sleep_min).filter((v) => v != null);
   if (sleeps.length >= 4) {
-    const short = sleeps.filter((v) => v < 420).length;
-    if (short >= 4) out.push({ tone: 'watch', score: 3, title: 'Short nights', text: `Under 7 hours on ${short} of the last ${sleeps.length} nights. A fixed wind-down time and a dark, cool room can help — and count daytime rest as part of recovery.` });
-    else if (short === 0) out.push({ tone: 'good', score: 1, title: 'Good run of sleep', text: `7 hours or more every night for the last ${sleeps.length} nights.` });
+    const short = sleeps.filter((v) => v < sl.need - 30).length;
+    if (short >= 4) out.push({ tone: 'watch', score: 3, title: 'Short nights', text: `Under your ${fmtMinutes(sl.need)} on ${short} of the last ${sleeps.length} nights.${sl.targetBed != null ? ` Aim to be in bed by ${fmtClock(sl.targetBed)}.` : ''} Count daytime rest as part of recovery too.` });
+    else if (short === 0) out.push({ tone: 'good', score: 1, title: 'Good run of sleep', text: `You met your ${fmtMinutes(sl.need)} every night for the last ${sleeps.length} nights.` });
   }
 
   // HRV / RHR trend: last 7 days vs the 28 before

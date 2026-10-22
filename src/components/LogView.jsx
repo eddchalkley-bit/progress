@@ -1,3 +1,4 @@
+import PageHeader from './PageHeader.jsx';
 import { useEffect, useState } from 'react';
 import { SYMPTOMS } from '../lib/analysis.js';
 import { addDays, fmtDay } from '../lib/time.js';
@@ -97,12 +98,10 @@ export default function LogView({ a, date, setDate, mode, setMode, today, onSave
 
   return (
     <div className="screen">
-      <header className="top">
-        <div>
-          <div className="eyebrow">{part === 'morning' ? 'Morning check-in' : 'End-of-day check-in'}</div>
-          <h1>{date === today ? 'Today' : fmtDay(date, { weekday: 'long', day: 'numeric', month: 'short' })}</h1>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow={part === 'morning' ? 'Morning check-in' : 'End-of-day check-in'}
+        title={date === today ? 'Today' : fmtDay(date, { weekday: 'long', day: 'numeric', month: 'short' })}
+      />
 
       <div className="chips">
         {chips.map((d, i) => (

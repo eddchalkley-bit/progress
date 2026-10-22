@@ -2,7 +2,7 @@ import { TargetChart, TargetLegend, windowSummary } from './Charts.jsx';
 import { targetSpecs, statusOf, describe } from '../lib/targets.js';
 import { fmtMinutes } from '../lib/time.js';
 import WhatWorked from './WhatWorked.jsx';
-import { Logo } from './Logo.jsx';
+import PageHeader from './PageHeader.jsx';
 import { dayPlan, noticings } from '../lib/suggestions.js';
 import { SpikesCard } from './Spikes.jsx';
 import { fmtHM } from '../lib/screens.js';
@@ -85,17 +85,16 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
 
   return (
     <div className="screen">
-      <header className="brand-row">
-        <Logo />
-        <button className="sync" onClick={() => { window.location.href = 'shortcuts://run-shortcut?name=Progress%20Sync'; }} disabled={loading} title="Run Progress Sync">
-          <span className={`dot ${lastSync && Date.now() - new Date(lastSync) < 18 * 3600e3 ? 'fresh' : 'stale'}`} />
-          {loading ? 'Refreshing…' : `Synced ${since(lastSync)} · Sync now`}
-        </button>
-      </header>
-      <div className="greeting">
-        <h1>{greeting()}</h1>
-        <div className="eyebrow">{dateLabel}</div>
-      </div>
+      <PageHeader
+        eyebrow={dateLabel}
+        title={greeting()}
+        right={(
+          <button className="sync" onClick={() => { window.location.href = 'shortcuts://run-shortcut?name=Progress%20Sync'; }} disabled={loading} title="Run Progress Sync">
+            <span className={`dot ${lastSync && Date.now() - new Date(lastSync) < 18 * 3600e3 ? 'fresh' : 'stale'}`} />
+            {loading ? 'Refreshing…' : `Synced ${since(lastSync)} · Sync now`}
+          </button>
+        )}
+      />
 
       {plan.recovery.active ? (
         <section className="status status-recovery">

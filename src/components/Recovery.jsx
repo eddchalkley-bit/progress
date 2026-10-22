@@ -103,10 +103,10 @@ export function BalanceCard({ a }) {
     <section className="card balance">
       <div className="card-head"><h3>Recovery vs activity</h3><span className={`bal-verdict ${sum.tone}`}>{sum.verdict}</span></div>
       <div className="bal-grid">
-        {rows.map((r) => {
+        {rows.map((r, i) => {
           const day = new Date(r.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 2);
           return (
-            <div key={r.date} className="bal-col">
+            <div key={r.date} className="bal-col" style={{ '--i': i }}>
               <span className={`bal-rec ${r.level || 'none'}`}>{r.recovery != null ? r.recovery : '–'}</span>
               <div className="bal-track">
                 {r.exertion != null && <div className={`bal-fill ${r.over ? 'over' : ''} ${r.partial ? 'partial' : ''}`} style={{ height: `${Math.min(100, (r.exertion / 150) * 100)}%` }} />}

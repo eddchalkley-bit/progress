@@ -38,7 +38,7 @@ export function TargetChart({ series, spec, height = 150 }) {
             const top = y(s.value), h = Math.max(2.5, y(0) - top);
             return (
               <g key={s.date}>
-                <rect x={cx(i) - bw / 2} y={top} width={bw} height={h} rx="2.5" className={`t-bar ${st} ${i === sel ? 'sel' : ''}`} />
+                <rect x={cx(i) - bw / 2} y={top} width={bw} height={h} rx="2.5" className={`t-bar up ${st} ${i === sel ? 'sel' : ''}`} style={{ '--i': i }} />
                 {series.length <= 14 && spec.short && <text x={cx(i)} y={top - 4} className="t-vlabel" textAnchor="middle">{spec.short(s.value)}</text>}
               </g>
             );
@@ -47,7 +47,7 @@ export function TargetChart({ series, spec, height = 150 }) {
           const h = Math.max(2.5, Math.abs(y(s.value) - ty));
           return (
             <rect key={s.date} x={cx(i) - bw / 2} y={s.value >= spec.target ? ty - h : top} width={bw} height={h} rx="2.5"
-              className={`t-bar ${st} ${i === sel ? 'sel' : ''}`} />
+              className={`t-bar ${s.value >= spec.target ? 'up' : 'down'} ${st} ${i === sel ? 'sel' : ''}`} style={{ '--i': i }} />
           );
         })}
         <line x1={padL} x2={padL + iw} y1={ty} y2={ty} className="t-target" />

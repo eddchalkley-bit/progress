@@ -1,3 +1,4 @@
+import PageHeader from './PageHeader.jsx';
 import { useState } from 'react';
 import { CopyIcon, WatchIcon } from './Icons.jsx';
 import { SYMPTOMS } from '../lib/analysis.js';
@@ -103,7 +104,7 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
 
   return (
     <div className="screen">
-      <header className="top"><div><div className="eyebrow">Connection & setup</div><h1>Settings</h1></div></header>
+      <PageHeader eyebrow="Connection & setup" title="Settings" />
 
       {!demoOnly && <section className="card">
         <div className="card-head"><h3>Your token</h3></div>

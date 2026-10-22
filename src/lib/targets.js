@@ -1,5 +1,6 @@
 // Where you should be for each signal, and how far today is from it.
 import { fmtMinutes } from './time.js';
+import { analyseSleep } from './sleep.js';
 
 const n0 = (v) => Math.round(v).toLocaleString('en-GB');
 
@@ -8,11 +9,14 @@ export function targetSpecs(a) {
   const env = a.envelope.steps;
   const specs = {};
 
+  const sl = analyseSleep(a);
   specs.sleep = {
     key: 'sleep_min', label: 'Sleep', unit: '', better: 'higher',
-    target: 480, band: [420, 540], targetLabel: '8h',
+    target: sl.need, band: [sl.need - 30, sl.need + 60], targetLabel: fmtMinutes(sl.need),
     fmt: fmtMinutes, diff: (d) => fmtMinutes(d),
-    note: 'Target range 7–9 hours (NHS guidance for adults). With long COVID, aim for the upper end — rest supports recovery.',
+    note: sl.learned
+      ? `Target is your own need (${fmtMinutes(sl.need)}), learned from the sleep before your good days.`
+      : 'Target is 8h (NHS range 7–9h) until Progress learns your own need.',
   };
 
   if (b.rhr != null) specs.rhr = {

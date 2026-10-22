@@ -1,3 +1,4 @@
+import PageHeader from './PageHeader.jsx';
 import { TargetLegend } from './Charts.jsx';
 import { SleepInsights } from './SleepCard.jsx';
 import { analyseSleep } from '../lib/sleep.js';
@@ -124,12 +125,7 @@ export default function Insights({ a, research, onReview, demo }) {
 
   return (
     <div className="screen">
-      <header className="top">
-        <div>
-          <div className="eyebrow">{a.coverage.days} days tracked · {a.coverage.checkinDays} check-ins</div>
-          <h1>Insights</h1>
-        </div>
-      </header>
+      <PageHeader eyebrow={`${a.coverage.days} days tracked · ${a.coverage.checkinDays} check-ins`} title="Insights" />
 
       <ProgressOverTime a={a} />
 
@@ -142,7 +138,7 @@ export default function Insights({ a, research, onReview, demo }) {
           <div><span>Stable days</span><strong>{b.stablePct == null ? '–' : Math.round(b.stablePct * 100)}<small>%</small></strong></div>
           <div><span>Resting HR</span><strong>{fmt(b.rhr)}<small> bpm</small></strong></div>
           <div><span>HRV</span><strong>{fmt(b.hrv)}<small> ms</small></strong></div>
-          <div><span>Sleep</span><strong>{fmtMinutes(b.sleep)}</strong></div>
+          <div><span>Sleep (usual / need)</span><strong>{fmtMinutes(b.sleep)}<small> / {fmtMinutes(analyseSleep(a).need)}</small></strong></div>
           <div><span>Sustainable steps</span><strong>{b.sustainableSteps ? `~${fmt(b.sustainableSteps)}` : '–'}</strong></div>
         </div>
         <p className="muted small">Stable days are days without a crash where symptoms stayed within a point of your usual level. Watching this rise is the clearest sign of progress.</p>
