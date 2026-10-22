@@ -30,6 +30,10 @@ export function makeDemoData(today, days = 84) {
     if (crashLeft === 0 && easeLeft === 0 && (steps[i - 1] ?? 0) > 8800 && r() < 0.55) easeLeft = 2;
     const easing = easeLeft > 0;
     if (easing) { s = 2200 + r() * 1200; easeLeft--; }
+    // The demo ends on a steady week with one slightly bigger day yesterday,
+    // so every card has something useful to say (and it isn't mid-crash).
+    const finale = i >= days - 9;
+    if (finale) { s = 4300 + r() * 1100 + (weekend ? 500 : 0); if (i === days - 2) s = 7300; }
     if (crashLeft > 0) s = 1200 + r() * 1300;
     const sc = Math.round((easing ? 1.5 + r() * 1.5 : 2 + r() * 4.5 + (crashLeft > 0 ? 1.5 : 0)) * 2) / 2;
     const so = crashLeft > 0 || easing ? 0 : Math.min(3, Math.floor(r() * 3.4 + (weekend ? 0.6 : 0)));
@@ -41,13 +45,13 @@ export function makeDemoData(today, days = 84) {
     const load = 0.7 * over(1) + 0.5 * over(2) + 0.25 * Math.max(0, (screen[i - 1] ?? 3) - 4) + 0.35 * Math.max(0, (social[i - 1] ?? 1) - 1);
     let sym = 3 + load - 0.3 * ((restsArr[i - 1] ?? 1) - 1) + (r() - 0.5) * 1.4;
     const pushToday = Math.max(0, (s - 6200) / 1800) + 0.3 * Math.max(0, sc - 4);
-    if (crashLeft === 0 && load + 0.9 * pushToday > 2.4 && r() < 0.85) { crashLeft = 3 + Math.floor(r() * 3); crashPeak = 7.2 + r() * 1.2; }
+    if (crashLeft === 0 && i < days - 15 && load + 0.9 * pushToday > 2.4 && r() < 0.85) { crashLeft = 3 + Math.floor(r() * 3); crashPeak = 7.2 + r() * 1.2; }
     let pem = false;
     if (crashLeft > 0) { sym = Math.max(sym, crashPeak - (5 - crashLeft) * 0.5); pem = crashLeft >= 3; crashLeft--; }
     sym = Math.max(0.5, Math.min(9.5, sym));
     syms.push(sym);
 
-    const sleepMin = 440 - load * 18 + (r() - 0.5) * 70;
+    const sleepMin = 472 - load * 18 + (r() - 0.5) * 70;
     const rhr = 60 + (sym - 3) * 1.6 + (r() - 0.5) * 2.2;
     const hrv = 44 - (sym - 3) * 3.4 + (r() - 0.5) * 6;
     const ex = crashLeft > 0 ? Math.round(r() * 4) : Math.round(Math.max(0, (s - 3500) / 260 + (r() - 0.5) * 8));

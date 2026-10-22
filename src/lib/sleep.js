@@ -46,7 +46,7 @@ export function analyseSleep(a) {
   const good = nights.filter((i) => i < t && outcome(a, i) === 'good');
   const learned = good.length >= SLEEP.minGoodNights;
   // Upper-middle of your good nights, so a habit of short sleep doesn't drag the target down.
-  const need = learned ? clamp(round15(percentile(good.map(total), 0.6)), SLEEP.minNeed, SLEEP.maxNeed) : SLEEP.defaultNeed;
+  const need = learned ? clamp(round15(percentile(good.map((i) => total(days[i])), 0.6)), SLEEP.minNeed, SLEEP.maxNeed) : SLEEP.defaultNeed;
 
   // ---- 2. Rhythm: usual bedtime / wake time, and how regular they are ----
   const last28 = recent(29);
