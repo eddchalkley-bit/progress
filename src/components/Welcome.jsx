@@ -32,7 +32,7 @@ export default function Welcome({ onDemo, onLegacyToken }) {
       </div>
 
       <section className="wl-story" aria-label="Why Progress exists">
-        <p>“I’ve had long COVID for over five years. I tried pacing apps, but kept being shown workout stats and told to exercise. They didn’t understand this illness. So I built the one I needed.”</p>
+        <p>“I’ve had long COVID for over five years. I tried pacing apps, but kept being shown workout stats and told to exercise. They didn’t understand this illness. So I built the one I and we needed.”</p>
         <span className="wl-sig">Edd, founder</span>
       </section>
 
@@ -84,7 +84,7 @@ export function AboutCard() {
   return (
     <section className="card about">
       <div className="card-head"><h3>About Progress</h3></div>
-      <blockquote className="about-quote">“I’ve had long COVID for over five years. I tried pacing apps, but kept being shown workout stats and told to exercise. They didn’t understand this illness. So I built the one I needed.”<span className="wl-sig">Edd, founder</span></blockquote>
+      <blockquote className="about-quote">“I’ve had long COVID for over five years. I tried pacing apps, but kept being shown workout stats and told to exercise. They didn’t understand this illness. So I built the one I and we needed.”<span className="wl-sig">Edd, founder</span></blockquote>
       <ul className="about-promises">
         <li><b>No workouts, no exercise advice.</b> Activity is only ever a ceiling to stay under, never a goal to hit.</li>
         <li><b>Rest counts as progress.</b> Staying inside your limits is what builds your baseline.</li>
