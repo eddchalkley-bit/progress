@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Progress</string>
+    <string name="title_activity_main">Progress</string>
+    <string name="package_name">uk.co.eddtech.progress</string>
+    <string name="custom_url_scheme">uk.co.eddtech.progress</string>
+    <string name="health_connect_privacy_policy_url">https://progress-v38v.vercel.app/privacy.html</string>
+</resources>

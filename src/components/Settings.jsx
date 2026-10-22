@@ -4,6 +4,7 @@ import { CopyIcon, WatchIcon } from './Icons.jsx';
 import { SYMPTOMS } from '../lib/analysis.js';
 import { TAGS } from '../lib/spikes.js';
 import { rebuildSleep } from '../lib/api.js';
+import { healthName, platform, lastNativeSync } from '../lib/native.js';
 
 function Copy({ text, label }) {
   const [done, setDone] = useState(false);
@@ -59,6 +60,24 @@ function exportCsv(a) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function HealthConnectCard({ native, token }) {
+  const [state, setState] = useState('');
+  const name = healthName();
+  return (
+    <section className="card">
+      <div className="card-head"><h3>{name}</h3>{lastNativeSync() && <span className="muted small">Last read {new Date(lastNativeSync().at).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', weekday: 'short' })}</span>}</div>
+      <p className="muted small">Progress reads your sleep, heart rate, HRV, resting heart rate, steps, active energy and breathing rate straight from {name} — no shortcuts needed. It reads every time you open the app.</p>
+      {!token && <p className="muted small"><b>Paste your token above first</b> so readings can be saved to your account.</p>}
+      <button className="primary" disabled={!token || native.syncing || state === 'connecting'} onClick={async () => {
+        setState('connecting');
+        try { await native.onConnect(); setState(''); } catch (e) { setState(e.message); }
+      }}>{native.syncing || state === 'connecting' ? 'Reading…' : lastNativeSync() ? 'Read again now' : `Connect ${name}`}</button>
+      {(state || native.note) && <p className="muted small">{state || native.note}</p>}
+      {platform() === 'ios' && <p className="muted small">To change what Progress can read: iPhone Settings → Health → Data Access &amp; Devices → Progress.</p>}
+    </section>
+  );
+}
+
 function SleepRebuild() {
   const [state, setState] = useState('');
   return (
@@ -87,7 +106,7 @@ function ResearchCheck({ onRun }) {
   );
 }
 
-export default function Settings({ token, onToken, demo, onDemo, data, a, onResearchRefresh, demoOnly }) {
+export default function Settings({ token, onToken, demo, onDemo, data, a, onResearchRefresh, demoOnly, native }) {
   const [draft, setDraft] = useState(token);
   const [generated, setGenerated] = useState('');
   const origin = demoOnly || typeof window === 'undefined' ? 'https://your-app.vercel.app' : window.location.origin;
@@ -125,6 +144,8 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
         </label>
       </section>}
 
+      {native?.on && <HealthConnectCard native={native} token={token} />}
+
       {token && !demo && (
         <section className="card">
           <div className="card-head"><h3>Data received (last 7 days)</h3></div>
@@ -135,7 +156,7 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
         </section>
       )}
 
-      <section className="card">
+      {!native?.on && <section className="card">
         <div className="card-head"><h3>Set up the shortcuts</h3></div>
         <p className="muted small">Build these once in the Shortcuts app on your iPhone. Everything you need to paste is here — tap to copy.</p>
 
@@ -250,7 +271,7 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
             <li>Open it from the icon and paste your token above.</li>
           </ol>
         </Guide>
-      </section>
+      </section>}
 
       {token && !demo && (
         <section className="card">

@@ -52,7 +52,7 @@ export function TargetCard({ spec, days, title, crash = false }) {
   );
 }
 
-export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag }) {
+export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, onSync }) {
   const days = a.days;
   const t = days[days.length - 1];
   const y = days[days.length - 2];
@@ -89,7 +89,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
         eyebrow={dateLabel}
         title={greeting()}
         right={(
-          <button className="sync" onClick={() => { window.location.href = 'shortcuts://run-shortcut?name=Progress%20Sync'; }} disabled={loading} title="Run Progress Sync">
+          <button className="sync" onClick={() => { if (onSync) onSync(); else window.location.href = 'shortcuts://run-shortcut?name=Progress%20Sync'; }} disabled={loading} title="Sync now">
             <span className={`dot ${lastSync && Date.now() - new Date(lastSync) < 18 * 3600e3 ? 'fresh' : 'stale'}`} />
             {loading ? 'Refreshing…' : `Synced ${since(lastSync)} · Sync now`}
           </button>

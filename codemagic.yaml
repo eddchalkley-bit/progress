@@ -1,0 +1,96 @@
+# Cloud builds for the Progress app — no Mac needed.
+# Codemagic (codemagic.io) runs these on its own Macs. The free personal plan
+# includes 500 macOS build minutes a month; each build here takes roughly 10–15.
+# Setup steps are in NATIVE.md. Builds are started by hand: Codemagic → Start new build.
+
+definitions:
+  web_build: &web_build
+    name: Install and build the web app
+    script: |
+      npm ci
+      npm run build
+
+workflows:
+  # iPhone → TestFlight (then the App Store)
+  ios-testflight:
+    name: iPhone → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: Progress App Store Connect key   # the name you give the API key in Codemagic
+    environment:
+      node: 22
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: uk.co.eddtech.progress
+      vars:
+        BUNDLE_ID: uk.co.eddtech.progress
+        APP_STORE_APPLE_ID: 0000000000   # replace with the app's Apple ID number from App Store Connect
+    scripts:
+      - *web_build
+      - name: Copy the web app into the iPhone project
+        script: npx cap sync ios
+      - name: Use the signing certificate and profile set up in Codemagic
+        script: xcode-project use-profiles
+      - name: Set the build number
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          cd ios/App && agvtool new-version -all $((LATEST + 1))
+      - name: Build the app
+        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  # Android test build: an APK you can install straight onto an Android phone.
+  android-test:
+    name: Android → test APK
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      node: 22
+      java: 21
+    scripts:
+      - *web_build
+      - name: Copy the web app into the Android project
+        script: npx cap sync android
+      - name: Build APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
+
+  # Android → Google Play (internal testing track)
+  android-play:
+    name: Android → Google Play (internal testing)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      node: 22
+      java: 21
+      android_signing:
+        - progress_upload_key       # upload keystore added in Codemagic (see NATIVE.md)
+      groups:
+        - google_play               # contains GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+    scripts:
+      - *web_build
+      - name: Copy the web app into the Android project
+        script: npx cap sync android
+      - name: Build signed app bundle
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease -PversionCode=$BUILD_NUMBER
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: true

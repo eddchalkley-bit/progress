@@ -25,8 +25,19 @@ export function authorised(req) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+// The iPhone / Android app runs from capacitor://localhost or https://localhost.
+const APP_ORIGINS = new Set(['capacitor://localhost', 'https://localhost', 'http://localhost', 'ionic://localhost']);
+
 export function guard(req, res, methods) {
   res.setHeader('Cache-Control', 'no-store');
+  const origin = req.headers.origin;
+  if (origin && APP_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Vary', 'Origin');
+  }
+  if (req.method === 'OPTIONS') { res.status(204).end(); return false; }
   if (!methods.includes(req.method)) { res.status(405).json({ error: 'Method not allowed' }); return false; }
   if (!authorised(req)) { res.status(401).json({ error: 'Wrong or missing token' }); return false; }
   return true;

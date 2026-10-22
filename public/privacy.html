@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy · Progress</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style>
+    :root { --bg: #EEF3FB; --ink: #18233A; --muted: #66738C; --accent: #3D6CC0; --card: #fff; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0E1524; --ink: #E8EEFA; --muted: #97A5BE; --accent: #8FB2F2; --card: #172239; } }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
+    .card { background: var(--card); border-radius: 22px; padding: 22px; box-shadow: 0 12px 32px rgba(30, 52, 98, 0.08); }
+    header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    header img { width: 44px; height: 44px; border-radius: 12px; }
+    h1 { font: 600 30px/1.15 Georgia, serif; margin: 0; }
+    h2 { font-size: 18px; margin: 26px 0 6px; }
+    p, li { color: var(--ink); }
+    .muted { color: var(--muted); font-size: 14px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+<main>
+  <header><img src="/favicon.svg" alt="" /><h1>Privacy policy</h1></header>
+  <div class="card">
+    <p class="muted">Draft · last updated 22 October 2026</p>
+
+    <p>Progress is a pacing and recovery diary. It helps you understand your own energy, sleep and symptoms. This page explains what it reads, why, and what happens to it.</p>
+
+    <h2>What Progress reads</h2>
+    <p>With your permission, Progress reads from Apple Health (iPhone) or Health Connect (Android):</p>
+    <ul>
+      <li>sleep, including sleep stages and time awake</li>
+      <li>heart rate, resting heart rate and heart rate variability (HRV)</li>
+      <li>steps, active energy and exercise time</li>
+      <li>breathing rate and blood oxygen</li>
+    </ul>
+    <p>It also stores the check-ins you enter: symptom ratings, screen time, social and mental load, stress, rest breaks, eating and notes.</p>
+    <p>Progress never writes to Apple Health or Health Connect.</p>
+
+    <h2>Why</h2>
+    <p>Only to show you your own patterns: your normal, your recovery, your energy budget, your sleep need, and what tends to come before a crash. Your data is not used for advertising, is not sold, and is not shared with anyone else.</p>
+
+    <h2>Where it is stored</h2>
+    <p>Your readings and check-ins are stored in a secure database (Supabase) and processed by the app’s server (Vercel). Access needs your private token. Data is sent over encrypted connections.</p>
+
+    <h2>Your choices</h2>
+    <ul>
+      <li>You can stop Progress reading health data at any time. On iPhone: Settings → Health → Data Access &amp; Devices → Progress. On Android: Health Connect → App permissions → Progress.</li>
+      <li>You can export your data as a spreadsheet from Settings in the app.</li>
+      <li>You can ask for all of your data to be deleted by emailing the address below.</li>
+    </ul>
+
+    <h2>Not medical advice</h2>
+    <p>Progress is a self-management diary, not a medical device. It does not diagnose, treat or prevent any condition. Talk to your GP or care team about your health.</p>
+
+    <h2>Contact</h2>
+    <p>[Add your contact email before publishing]</p>
+  </div>
+</main>
+</body>
+</html>

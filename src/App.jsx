@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { analyse } from './lib/analysis.js';
 import { makeDemoData } from './lib/demo.js';
-import { fetchData, saveCheckin, refreshResearch, reviewResearch, tagSpike, getToken, setToken, getDemoPref, setDemoPref } from './lib/api.js';
+import { fetchData, saveCheckin, refreshResearch, reviewResearch, tagSpike, getToken, setToken, getDemoPref, setDemoPref, post } from './lib/api.js';
+import { isNative, syncHealth, connectHealth, lastNativeSync } from './lib/native.js';
 import { localDate } from './lib/time.js';
 import { startReveal } from './lib/reveal.js';
 import Today from './components/Today.jsx';
@@ -48,6 +49,30 @@ export default function App() {
   }, [demo, today]);
 
   useEffect(() => startReveal(), []);
+  // Native app: read Apple Health / Health Connect directly (no Shortcuts needed).
+  const [syncing, setSyncing] = useState(false);
+  const [syncNote, setSyncNote] = useState('');
+  const nativeSync = useCallback(async ({ force = false } = {}) => {
+    if (!isNative() || demo || !token) return;
+    const last = lastNativeSync();
+    if (!force && last && Date.now() - new Date(last.at) < 15 * 60e3) return;
+    setSyncing(true); setSyncNote('');
+    try {
+      const r = await syncHealth(post, { days: last ? 4 : 90 });
+      setSyncNote(`Read ${r.readings.toLocaleString('en-GB')} readings from ${r.days === 90 ? 'the last 90 days' : 'the last few days'}.`);
+      await load();
+    } catch (e) { setSyncNote(e.message); }
+    finally { setSyncing(false); }
+  }, [demo, token, load]);
+  const onConnectHealth = async () => { await connectHealth(); await nativeSync({ force: true }); };
+  useEffect(() => { nativeSync(); }, [nativeSync]);
+  useEffect(() => {
+    if (!isNative()) return;
+    const onVis = () => { if (document.visibilityState === 'visible') nativeSync(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [nativeSync]);
+
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
     const onVis = () => { if (document.visibilityState === 'visible' && !demo) load(); };
@@ -103,15 +128,15 @@ export default function App() {
           </div>
         )}
         {tab === 'settings' && !analysis ? (
-          <Settings token={token} onToken={onToken} demo={demoPref} onDemo={onDemo} data={data} a={emptyAnalysis} onResearchRefresh={onResearchRefresh} demoOnly={DEMO_ONLY} />
+          <Settings token={token} onToken={onToken} demo={demoPref} onDemo={onDemo} data={data} a={emptyAnalysis} onResearchRefresh={onResearchRefresh} demoOnly={DEMO_ONLY} native={{ on: isNative(), syncing, note: syncNote, onConnect: onConnectHealth, onSync: () => nativeSync({ force: true }) }} />
         ) : !analysis ? (
           <div className="loading">{loading ? 'Loading…' : ''}</div>
         ) : (
           <>
-            {tab === 'today' && <Today a={analysis} data={data} onCheckIn={goLog} onRefresh={load} loading={loading} onTag={onTag} />}
+            {tab === 'today' && <Today a={analysis} data={data} onCheckIn={goLog} onRefresh={load} loading={loading || syncing} onTag={onTag} onSync={isNative() ? () => nativeSync({ force: true }) : null} />}
             {tab === 'log' && <LogView a={analysis} date={logDate} setDate={setLogDate} mode={logMode} setMode={setLogMode} today={today} onSave={onSaveCheckin} />}
             {tab === 'insights' && <Insights a={analysis} research={data?.research} onReview={onReview} demo={demo} />}
-            {tab === 'settings' && <Settings token={token} onToken={onToken} demo={demoPref} onDemo={onDemo} data={data} a={analysis} onResearchRefresh={onResearchRefresh} demoOnly={DEMO_ONLY} />}
+            {tab === 'settings' && <Settings token={token} onToken={onToken} demo={demoPref} onDemo={onDemo} data={data} a={analysis} onResearchRefresh={onResearchRefresh} demoOnly={DEMO_ONLY} native={{ on: isNative(), syncing, note: syncNote, onConnect: onConnectHealth, onSync: () => nativeSync({ force: true }) }} />}
           </>
         )}
       </main>

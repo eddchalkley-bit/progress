@@ -1,3 +1,5 @@
+import { API_BASE } from './native.js';
+
 const KEY = 'progress_token';
 const DEMO_KEY = 'progress_demo';
 
@@ -19,7 +21,7 @@ export function setDemoPref(on) {
 }
 
 async function call(path, opts = {}) {
-  const res = await fetch(path, {
+  const res = await fetch(API_BASE + path, {
     ...opts,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}`, ...(opts.headers || {}) },
   });
@@ -38,3 +40,4 @@ export const refreshResearch = () => call('/api/research-refresh', { method: 'PO
 export const reviewResearch = (id) => call('/api/research-review', { method: 'POST', body: JSON.stringify({ id }) });
 export const tagSpike = (id, tag) => call('/api/tag', { method: 'POST', body: JSON.stringify({ id, tag }) });
 export const rebuildSleep = () => call('/api/sleep-rebuild', { method: 'POST' });
+export const post = (path, body) => call(path, { method: 'POST', body: JSON.stringify(body) });

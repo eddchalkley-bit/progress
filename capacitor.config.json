@@ -1,0 +1,15 @@
+{
+  "appId": "uk.co.eddtech.progress",
+  "appName": "Progress",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#EEF3FB"
+  },
+  "android": {
+    "backgroundColor": "#EEF3FB"
+  },
+  "plugins": {
+    "CapacitorHttp": { "enabled": true }
+  }
+}
