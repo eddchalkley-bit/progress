@@ -588,3 +588,35 @@ input[type=range]::-webkit-slider-thumb { margin-top: -9px; border: 0; box-shado
 .num-pick button.on.sev-3 { background: var(--red); }
 .num-pick button.on.am::after { background: #fff; }
 .sym-label { font-weight: 600; }
+
+/* ---------- Today's energy card ---------- */
+.energy .en-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 6px; }
+.energy .en-stats div { display: flex; flex-direction: column; }
+.energy .en-stats b { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.energy .en-stats span { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+.energy .en-crash b { color: var(--red); }
+.en-track { position: relative; height: 16px; border-radius: 999px; background: var(--soft); margin: 30px 0 10px; }
+.en-zone { position: absolute; top: 0; bottom: 0; }
+.en-zone.amber { background: var(--amber-bg); }
+.en-zone.red { right: 0; background: var(--red-bg); border-radius: 0 999px 999px 0; }
+.en-fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent-2); overflow: hidden; transition: width 0.4s; }
+.en-fill-stress { height: 100%; background: var(--accent); }
+.energy-amber .en-fill { background: var(--amber); }
+.energy-amber .en-fill-stress { background: color-mix(in srgb, var(--amber) 70%, var(--ink)); }
+.energy-red .en-fill { background: var(--red); }
+.energy-red .en-fill-stress { background: color-mix(in srgb, var(--red) 70%, var(--ink)); }
+.en-mark { position: absolute; top: -5px; bottom: -5px; width: 2px; transform: translateX(-1px); border-radius: 1px; }
+.en-mark span { position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.en-mark.budget { background: var(--ink); }
+.en-mark.budget span { color: var(--ink); left: auto; right: 4px; transform: none; }
+.en-mark.crash { background: var(--red); }
+.en-mark.crash span { color: var(--red); left: 4px; transform: none; }
+.en-now { position: absolute; top: 50%; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface); background: var(--ink); transform: translate(-50%, -50%); }
+.en-sentence { font-size: 15px; line-height: 1.4; margin: 8px 0 6px; }
+.en-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); align-items: center; }
+.en-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.en-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.en-legend .sw-phys { background: var(--accent-2); }
+.en-legend .sw-stress { background: var(--accent); }
+.en-legend .dot-now { width: 9px; height: 9px; border: 0; background: var(--ink); }
+.en-foot { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); line-height: 1.45; }

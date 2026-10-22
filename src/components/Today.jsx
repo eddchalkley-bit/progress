@@ -7,6 +7,7 @@ import { dayPlan, noticings } from '../lib/suggestions.js';
 import { SpikesCard } from './Spikes.jsx';
 import { fmtHM } from '../lib/screens.js';
 import { RecoveryCard, BalanceCard } from './Recovery.jsx';
+import EnergyCard from './EnergyCard.jsx';
 
 const fmt = (v) => (v == null ? '–' : Math.round(v).toLocaleString('en-GB'));
 
@@ -116,6 +117,8 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag })
       {a.redFlag && <div className="flag-banner">{a.redFlag}</div>}
 
       <Glance a={a} plan={plan} />
+
+      <EnergyCard a={a} plan={plan} onLogCrash={() => onCheckIn(undefined, 'evening')} />
 
       <RecoveryCard a={a} />
       <BalanceCard a={a} />
