@@ -1,11 +1,11 @@
-// Recovery (0–100), exertion, and a body-signals health check.
-// Recovery compares the night's HRV and resting HR with your own rolling average
-// (up to 60 days). HRV counts for 60%, resting HR for 40%. It is set once per day
-// and does not change as the day goes on.
-// Exertion is how much you did (active energy, or steps if energy is missing)
-// on a scale where 50 = a usual day for you. Each day's limit follows its recovery:
-// low recovery means a lower limit. Staying at or under the limit is the aim —
-// it is a ceiling, never a target to reach.
+// Recovery, activity and a body-signals health check — all on ONE scale: 100% = your normal.
+// Baseline = your normal: the average of your own last 60 days (it firms up after 14).
+// Recovery = how recharged your body is this morning: last night's HRV (60%) and resting
+//   HR (40%) compared with that baseline. 100% = a normal night, 80% = below par.
+//   Set once per day; it doesn't change as the day goes on.
+// Activity = how much you did (active energy, or steps if energy is missing) as a % of a
+//   usual day for you. Today's limit follows recovery (80% recovered → about 80% of a
+//   usual day), capped at 110% — it's a ceiling, never a target to reach.
 
 const WINDOW = 60;
 export const FULL_BASELINE = 14;
@@ -23,9 +23,13 @@ function priorValues(days, i, key, window = WINDOW) {
 
 export function recoveryLevel(score) {
   if (score == null) return null;
-  return score >= 67 ? 'good' : score >= 34 ? 'moderate' : 'low';
+  return score >= 95 ? 'good' : score >= 80 ? 'moderate' : 'low';
 }
-export const LEVEL_LABEL = { good: 'Good', moderate: 'Moderate', low: 'Low' };
+export function recoveryLabel(score) {
+  if (score == null) return '';
+  return score >= 105 ? 'Above your normal' : score >= 95 ? 'Your normal' : score >= 80 ? 'Below your normal' : 'Well below your normal';
+}
+export const LEVEL_LABEL = { good: 'Normal or better', moderate: 'Below normal', low: 'Well below normal' };
 
 export function recoveryFor(days, i) {
   const d = days[i];
@@ -38,7 +42,8 @@ export function recoveryFor(days, i) {
   const rhrPct = (d.rhr - rb) / rb;     // lower resting HR is better
   const hrvPart = clamp(50 + hrvPct * 160, 0, 100);
   const rhrPart = clamp(50 - rhrPct * 400, 0, 100);
-  const score = Math.round(clamp(0.6 * hrvPart + 0.4 * rhrPart, 0, 100));
+  const raw = clamp(0.6 * hrvPart + 0.4 * rhrPart, 0, 100); // 50 = exactly your normal
+  const score = Math.round(clamp(100 + (raw - 50) * 0.8, 60, 140)); // 100% = your normal
   return {
     score, level: recoveryLevel(score),
     hrv: d.hrv, hrvAvg: hb, hrvPct, rhr: d.rhr, rhrAvg: rb, rhrPct,
@@ -57,7 +62,7 @@ function recoveryReason(hrvPct, rhrPct) {
   return 'Both signals are close to your normal.';
 }
 
-// Exertion on a 0–100 scale: 50 = your usual day.
+// Activity as a % of a usual day for you (100 = usual).
 function exertionFor(days, i) {
   const d = days[i];
   const key = d?.energy != null ? 'energy' : d?.steps != null ? 'steps' : null;
@@ -67,11 +72,11 @@ function exertionFor(days, i) {
   const sorted = [...base].sort((a, b) => a - b);
   const med = sorted[Math.floor(sorted.length / 2)];
   if (!med) return null;
-  return { value: Math.round(clamp((d[key] / med) * 50, 0, 100)), basis: key };
+  return { value: Math.round(clamp((d[key] / med) * 100, 0, 200)), basis: key };
 }
 
-// The day's limit follows recovery: 0% → 30, 42% → ~47, 100% → 70 (a little above a usual day).
-export const limitFor = (score) => Math.round(30 + 0.4 * score);
+// The day's limit follows recovery (% of a usual day), never more than 110%.
+export const limitFor = (score) => Math.min(110, Math.round(score));
 
 export function balanceDays(days, n = 7) {
   const out = [];
@@ -82,7 +87,7 @@ export function balanceDays(days, n = 7) {
     out.push({
       date: days[i].date, recovery: r?.score ?? null, level: r?.level ?? null,
       exertion: e?.value ?? null, basis: e?.basis ?? null, limit,
-      over: limit != null && e != null ? e.value > limit + 5 : null,
+      over: limit != null && e != null ? e.value > limit + 10 : null,
       partial: i === days.length - 1,
     });
   }
