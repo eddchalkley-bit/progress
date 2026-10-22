@@ -1,17 +1,18 @@
 // POST /api/sleep-rebuild — recalculates every stored night (totals, stages, bedtime,
 // wake time, wake-ups) from the raw sleep samples. Safe to run any time.
-import { guard, db, TZ, fail, fetchAll } from './_lib.js';
+import { guard, own, TZ, fail, fetchAll } from './_lib.js';
 import { summariseNights } from '../src/lib/ingest.js';
 
 export default async function handler(req, res) {
-  if (!guard(req, res, ['POST'])) return;
+  const who = await guard(req, res, ['POST']);
+  if (!who) return;
   try {
-    const sb = db();
-    const samples = await fetchAll(() => sb.from('sleep_samples').select('start_at,end_at,stage').order('end_at'));
+    const T = own(who);
+    const samples = await fetchAll(() => T('sleep_samples').select('start_at,end_at,stage').order('end_at'));
     const rows = summariseNights(samples, TZ);
     const now = new Date().toISOString();
     for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await sb.from('daily_metrics')
+      const { error } = await T('daily_metrics')
         .upsert(rows.slice(i, i + 500).map((r) => ({ ...r, updated_at: now })), { onConflict: 'date,metric' });
       if (error) throw error;
     }

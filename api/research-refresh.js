@@ -3,7 +3,7 @@
 // Asks Claude (with web search) for pacing / long COVID research published since the last check,
 // and stores short plain-English summaries. It never changes the app's thresholds by itself:
 // anything that suggests a change is flagged for you to review.
-import { authorised, db, fail } from './_lib.js';
+import { whoIs, cors, db, fail } from './_lib.js';
 import { PRINCIPLES, SOURCES, REVIEWED } from '../src/lib/research.js';
 
 export const maxDuration = 300;
@@ -39,8 +39,19 @@ Maximum 5 items. Do not invent studies; only include items you found in search r
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
-  if (!authorised(req) && !cronOk(req)) return res.status(401).json({ error: 'Wrong or missing token' });
+  if (!cors(req, res)) return;
+  if (!cronOk(req)) {
+    // Research costs API credit, so only the app's owner can run it on demand:
+    // the original token, or the account it has been linked to.
+    const who = await whoIs(req).catch(() => null);
+    if (!who) return res.status(401).json({ error: 'Please sign in again (wrong or expired token)' });
+    let owner = who.via === 'legacy';
+    if (!owner && who.userId) {
+      const { data } = await db().from('api_tokens').select('kind').eq('user_id', who.userId).eq('kind', 'legacy').limit(1);
+      owner = Boolean(data?.length);
+    }
+    if (!owner) return res.status(403).json({ error: 'Research updates are run by the app owner.' });
+  }
   if (!process.env.ANTHROPIC_API_KEY) return res.status(400).json({ error: 'Add ANTHROPIC_API_KEY in Vercel to enable research updates.' });
   try {
     const sb = db();

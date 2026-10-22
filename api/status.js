@@ -1,6 +1,6 @@
 // GET /api/status — a short text summary for the Apple Watch "Progress Status" shortcut.
 // Add ?format=json for the full object.
-import { guard, loadAll, TZ, fail } from './_lib.js';
+import { guard, own, loadAll, TZ, fail } from './_lib.js';
 import { analyse } from '../src/lib/analysis.js';
 import { localDate } from '../src/lib/time.js';
 import { dayPlan } from '../src/lib/suggestions.js';
@@ -10,9 +10,10 @@ import { recoveryFor } from '../src/lib/recovery.js';
 import { fmtClock } from '../src/lib/time.js';
 
 export default async function handler(req, res) {
-  if (!guard(req, res, ['GET'])) return;
+  const who = await guard(req, res, ['GET']);
+  if (!who) return;
   try {
-    const data = await loadAll(120);
+    const data = await loadAll(who, 120);
     const a = analyse(data, localDate(new Date(), TZ));
     if (req.query?.format === 'json') return res.status(200).json(a.status);
     const plan = dayPlan(a);
