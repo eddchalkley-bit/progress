@@ -98,7 +98,7 @@ export function BalanceCard({ a }) {
   const rows = balanceDays(a.days, 7);
   if (!rows.some((r) => r.recovery != null)) return null;
   const sum = balanceSummary(rows);
-  const basis = rows.find((r) => r.basis)?.basis === 'steps' ? 'steps' : 'active energy';
+  const basis = rows.find((r) => r.basis)?.basis === 'steps' ? 'steps' : 'physical effort';
   return (
     <section className="card balance">
       <div className="card-head"><h3>Recovery vs activity</h3><span className={`bal-verdict ${sum.tone}`}>{sum.verdict}</span></div>

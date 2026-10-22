@@ -1,4 +1,5 @@
 import PageHeader from './PageHeader.jsx';
+import { AboutCard } from './Welcome.jsx';
 import { useState } from 'react';
 import { CopyIcon, WatchIcon } from './Icons.jsx';
 import { SYMPTOMS } from '../lib/analysis.js';
@@ -110,7 +111,7 @@ function HealthConnectCard({ native, token }) {
   return (
     <section className="card">
       <div className="card-head"><h3>{name}</h3>{lastNativeSync() && <span className="muted small">Last read {new Date(lastNativeSync().at).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', weekday: 'short' })}</span>}</div>
-      <p className="muted small">Progress reads your sleep, heart rate, HRV, resting heart rate, steps, active energy and breathing rate straight from {name} — no shortcuts needed. It reads every time you open the app.</p>
+      <p className="muted small">Progress reads your sleep, heart rate, HRV, resting heart rate, steps, physical effort and breathing rate straight from {name} — no shortcuts needed. It reads every time you open the app.</p>
       {!token && <p className="muted small"><b>Sign in first</b> so readings can be saved to your account.</p>}
       <button className="primary" disabled={!token || native.syncing || state === 'connecting'} onClick={async () => {
         setState('connecting');
@@ -159,7 +160,7 @@ export default function Settings({ token, onToken, session, account, onSignOut, 
   const auth = `Bearer ${syncToken || (!session && token) || 'YOUR-SYNC-TOKEN'}`;
   const recent = a.days.slice(-7);
   const has = (k) => recent.some((d) => d[k] != null);
-  const checks = [['Resting HR', 'rhr'], ['HRV', 'hrv'], ['Sleep', 'sleep_min'], ['Steps', 'steps'], ['Brisk movement', 'exercise'], ['Active energy', 'energy'], ['Breathing rate', 'resp'], ['Wrist temperature', 'temp'], ['Heart-rate readings (spikes)', 'hr_above_min']];
+  const checks = [['Resting HR', 'rhr'], ['HRV', 'hrv'], ['Sleep', 'sleep_min'], ['Steps', 'steps'], ['Brisk movement', 'exercise'], ['Physical effort', 'energy'], ['Breathing rate', 'resp'], ['Wrist temperature', 'temp'], ['Heart-rate readings (spikes)', 'hr_above_min']];
 
   const makeToken = () => {
     const bytes = new Uint8Array(24);
@@ -350,6 +351,8 @@ export default function Settings({ token, onToken, session, account, onSignOut, 
           </>
         )}
       </section>}
+
+      <AboutCard />
 
       <p className="muted small center">Progress v0.1 · not a medical device</p>
     </div>

@@ -31,10 +31,16 @@ export default function Welcome({ onDemo, onLegacyToken }) {
         <p className="wl-tag">A pacing coach that learns your normal from your watch, and helps you stay inside it.</p>
       </div>
 
+      <section className="wl-story" aria-label="Why Progress exists">
+        <p>“I’ve had long COVID for over five years. I tried pacing apps, but kept being shown workout stats and told to exercise. They didn’t understand this illness. So I built the one I needed.”</p>
+        <span className="wl-sig">Edd, founder</span>
+      </section>
+
       <ul className="wl-points">
         <li><b>Your own baseline</b><span>Recovery, sleep need and energy budget learned from you, not averages.</span></li>
         <li><b>See load building up</b><span>The last few days add up. Progress shows it before it catches up with you.</span></li>
         <li><b>A minute a day</b><span>Morning and evening check-ins, then Progress does the rest.</span></li>
+        <li><b>No workouts. No exercise advice. Ever.</b><span>Activity is only ever a ceiling to stay under, never a goal to hit. Rest counts as progress.</span></li>
       </ul>
 
       <section className="card wl-card">
@@ -70,5 +76,20 @@ export default function Welcome({ onDemo, onLegacyToken }) {
       </div>
       <p className="muted small center wl-foot">Not a medical device · <a href="/privacy.html">Privacy</a></p>
     </div>
+  );
+}
+
+// Same story for people already inside the app (and demo visitors, who skip this screen).
+export function AboutCard() {
+  return (
+    <section className="card about">
+      <div className="card-head"><h3>About Progress</h3></div>
+      <blockquote className="about-quote">“I’ve had long COVID for over five years. I tried pacing apps, but kept being shown workout stats and told to exercise. They didn’t understand this illness. So I built the one I needed.”<span className="wl-sig">Edd, founder</span></blockquote>
+      <ul className="about-promises">
+        <li><b>No workouts, no exercise advice.</b> Activity is only ever a ceiling to stay under, never a goal to hit.</li>
+        <li><b>Rest counts as progress.</b> Staying inside your limits is what builds your baseline.</li>
+        <li><b>Built on pacing guidance</b> for post-exertional malaise, not fitness tracking.</li>
+      </ul>
+    </section>
   );
 }
