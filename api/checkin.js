@@ -1,5 +1,5 @@
 // POST /api/checkin — save (or replace) the daily check-in for a date.
-import { guard, readBody, db, TZ, fail } from './_lib.js';
+import { guard, own, readBody, db, TZ, fail } from './_lib.js';
 import { localDate } from '../src/lib/time.js';
 
 const int = (v, max) => {
@@ -9,8 +9,10 @@ const int = (v, max) => {
 };
 
 export default async function handler(req, res) {
-  if (!guard(req, res, ['POST'])) return;
+  const who = await guard(req, res, ['POST']);
+  if (!who) return;
   try {
+    const T = own(who);
     const b = readBody(req);
     const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date || '') ? b.date : localDate(new Date(), TZ);
     const hrs = (v) => (v === null || v === undefined || v === '' ? null : Math.min(24, Math.max(0, Math.round(Number(v) * 4) / 4)));
@@ -19,7 +21,7 @@ export default async function handler(req, res) {
     if (b.part === 'morning') {
       const am = { date, updated_at: new Date().toISOString(), am_at: new Date().toISOString(), am_rested: int(b.am_rested, 3) };
       for (const k of ['fatigue', 'brain_fog', 'breath', 'aches', 'heart']) am[`am_${k}`] = int(b[`am_${k}`], 10);
-      const { error } = await db().from('checkins').upsert(am, { onConflict: 'date' });
+      const { error } = await T('checkins').upsert(am, { onConflict: 'date' });
       if (error) {
         if (/am_[a-z_]+/.test(error.message || '')) throw new Error('The morning check-in needs a database update. Run the SQL in supabase/morning-checkin.sql in Supabase › SQL Editor, then try again.');
         throw error;
@@ -45,14 +47,14 @@ export default async function handler(req, res) {
       notes: b.notes ? String(b.notes).slice(0, 2000) : null,
       updated_at: new Date().toISOString(),
     };
-    let { error } = await db().from('checkins').upsert(row, { onConflict: 'date' });
+    let { error } = await T('checkins').upsert(row, { onConflict: 'date' });
     // If the database hasn't had a newer column added yet, save everything else rather than failing.
     for (let tries = 0; error && tries < 5; tries++) {
       const m = /'([a-z_]+)' column|column "?([a-z_]+)"? (?:of relation|does not exist)/i.exec(error.message || '');
       const col = m && (m[1] || m[2]);
       if (!col || !(col in row)) break;
       delete row[col];
-      ({ error } = await db().from('checkins').upsert(row, { onConflict: 'date' }));
+      ({ error } = await T('checkins').upsert(row, { onConflict: 'date' }));
     }
     if (error) throw error;
     res.status(200).json({ ok: true, checkin: row });

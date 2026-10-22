@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { analyse } from './lib/analysis.js';
 import { makeDemoData } from './lib/demo.js';
-import { fetchData, saveCheckin, refreshResearch, reviewResearch, tagSpike, getToken, setToken, getDemoPref, setDemoPref, post } from './lib/api.js';
+import { fetchData, saveCheckin, refreshResearch, reviewResearch, tagSpike, getToken, setToken, getDemoPref, setDemoPref, post, getSession, signOut } from './lib/api.js';
 import { isNative, syncHealth, connectHealth, lastNativeSync } from './lib/native.js';
 import { localDate } from './lib/time.js';
 import { startReveal } from './lib/reveal.js';
@@ -9,6 +9,7 @@ import Today from './components/Today.jsx';
 import LogView from './components/LogView.jsx';
 import Insights from './components/Insights.jsx';
 import Settings from './components/Settings.jsx';
+import Welcome from './components/Welcome.jsx';
 import { TodayIcon, LogIcon, InsightsIcon, SettingsIcon } from './components/Icons.jsx';
 
 export const DEMO_ONLY = import.meta.env.VITE_DEMO_ONLY === '1';
@@ -30,8 +31,16 @@ export default function App() {
     } catch { /* ignore */ }
     return getToken();
   });
-  const [demoPref, setDemo] = useState(getDemoPref());
-  const demo = DEMO_ONLY || demoPref || !token;
+  const [session, setSess] = useState(getSession);
+  useEffect(() => {
+    const onSess = () => setSess(getSession());
+    window.addEventListener('progress-session', onSess);
+    return () => window.removeEventListener('progress-session', onSess);
+  }, []);
+  const authed = Boolean(session || token);
+  // ?demo in the link opens the demo straight away (handy for sharing).
+  const [demoPref, setDemo] = useState(() => getDemoPref() || /[?&]demo\b/.test(window.location.search));
+  const demo = DEMO_ONLY || demoPref;
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,18 +51,19 @@ export default function App() {
   const load = useCallback(async () => {
     setError('');
     if (demo) { setData(makeDemoData(today)); return; }
+    if (!getSession() && !getToken()) { setData(null); return; }
     setLoading(true);
     try { setData(await fetchData()); }
     catch (e) { setError(e.message); }
     finally { setLoading(false); }
-  }, [demo, today]);
+  }, [demo, today, session?.email, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => startReveal(), []);
   // Native app: read Apple Health / Health Connect directly (no Shortcuts needed).
   const [syncing, setSyncing] = useState(false);
   const [syncNote, setSyncNote] = useState('');
   const nativeSync = useCallback(async ({ force = false } = {}) => {
-    if (!isNative() || demo || !token) return;
+    if (!isNative() || demo || !authed) return;
     const last = lastNativeSync();
     if (!force && last && Date.now() - new Date(last.at) < 15 * 60e3) return;
     setSyncing(true); setSyncNote('');
@@ -63,7 +73,7 @@ export default function App() {
       await load();
     } catch (e) { setSyncNote(e.message); }
     finally { setSyncing(false); }
-  }, [demo, token, load]);
+  }, [demo, authed, load]);
   const onConnectHealth = async () => { await connectHealth(); await nativeSync({ force: true }); };
   useEffect(() => { nativeSync(); }, [nativeSync]);
   useEffect(() => {
@@ -109,26 +119,48 @@ export default function App() {
   };
 
   const onToken = (t) => { setToken(t); t = getToken(); setTok(t); setError(''); if (t) { setDemoPref(false); setDemo(false); } };
-  const onDemo = (on) => { setDemoPref(on); setDemo(on); };
+  const onDemo = (on) => {
+    setDemoPref(on); setDemo(on); setTab('today'); window.scrollTo(0, 0);
+    if (!on && /[?&]demo\b/.test(window.location.search)) history.replaceState(null, '', window.location.pathname);
+  };
+  const onSignOut = () => { signOut(); setTok(''); setData(null); setTab('today'); };
   const goLog = (date = today, mode = null) => { setLogDate(date); setLogMode(mode); setTab('log'); window.scrollTo(0, 0); };
+
+  const [wantsAccount, setWantsAccount] = useState(false);
+  if ((!authed || (wantsAccount && !session)) && !demo) {
+    return (
+      <div className="app">
+        <main className="main"><Welcome onDemo={() => onDemo(true)} onLegacyToken={(t) => { setWantsAccount(false); onToken(t); }} /></main>
+      </div>
+    );
+  }
+
+  const settingsProps = {
+    token, onToken, session, account: data?.account, onSignOut, onCreateAccount: () => setWantsAccount(true),
+    demo: demoPref, onDemo, data, onResearchRefresh, demoOnly: DEMO_ONLY,
+    native: { on: isNative(), syncing, note: syncNote, onConnect: onConnectHealth, onSync: () => nativeSync({ force: true }) },
+  };
 
   return (
     <div className="app">
       <main className="main">
-        {demo && tab !== 'settings' && (
-          <button className="demo-banner" onClick={() => setTab('settings')}>
-            {DEMO_ONLY ? 'Demo with sample data — your own data appears once Progress is deployed' : 'Showing sample data — connect your watch in Settings'}
-          </button>
+        {demo && (
+          <div className="demo-banner">
+            <span><b>Demo</b> · sample data from a few months of use</span>
+            {!DEMO_ONLY && (authed
+              ? <button className="link-btn" onClick={() => onDemo(false)}>Back to my data</button>
+              : <button className="link-btn" onClick={() => onDemo(false)}>Create your account</button>)}
+          </div>
         )}
         {error && (
           <div className="error-banner">
-            {/token/i.test(error)
-              ? <>Your saved token doesn’t match the one in Vercel. <button className="link-btn" onClick={() => setTab('settings')}>Re-enter it in Settings</button></>
+            {/sign in|token/i.test(error)
+              ? <>You’ve been signed out. <button className="link-btn" onClick={onSignOut}>Sign in again</button></>
               : <>Couldn’t load your data: {error}</>}
           </div>
         )}
         {tab === 'settings' && !analysis ? (
-          <Settings token={token} onToken={onToken} demo={demoPref} onDemo={onDemo} data={data} a={emptyAnalysis} onResearchRefresh={onResearchRefresh} demoOnly={DEMO_ONLY} native={{ on: isNative(), syncing, note: syncNote, onConnect: onConnectHealth, onSync: () => nativeSync({ force: true }) }} />
+          <Settings {...settingsProps} a={emptyAnalysis} />
         ) : !analysis ? (
           <div className="loading">{loading ? 'Loading…' : ''}</div>
         ) : (
@@ -136,7 +168,7 @@ export default function App() {
             {tab === 'today' && <Today a={analysis} data={data} onCheckIn={goLog} onRefresh={load} loading={loading || syncing} onTag={onTag} onSync={isNative() ? () => nativeSync({ force: true }) : null} />}
             {tab === 'log' && <LogView a={analysis} date={logDate} setDate={setLogDate} mode={logMode} setMode={setLogMode} today={today} onSave={onSaveCheckin} />}
             {tab === 'insights' && <Insights a={analysis} research={data?.research} onReview={onReview} demo={demo} />}
-            {tab === 'settings' && <Settings token={token} onToken={onToken} demo={demoPref} onDemo={onDemo} data={data} a={analysis} onResearchRefresh={onResearchRefresh} demoOnly={DEMO_ONLY} native={{ on: isNative(), syncing, note: syncNote, onConnect: onConnectHealth, onSync: () => nativeSync({ force: true }) }} />}
+            {tab === 'settings' && <Settings {...settingsProps} a={analysis} />}
           </>
         )}
       </main>

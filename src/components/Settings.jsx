@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { CopyIcon, WatchIcon } from './Icons.jsx';
 import { SYMPTOMS } from '../lib/analysis.js';
 import { TAGS } from '../lib/spikes.js';
-import { rebuildSleep } from '../lib/api.js';
+import { rebuildSleep, createSyncToken, linkExistingData, deleteAccount } from '../lib/api.js';
 import { healthName, platform, lastNativeSync } from '../lib/native.js';
 
 function Copy({ text, label }) {
@@ -60,6 +60,50 @@ function exportCsv(a) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function AccountCard({ session, account, legacyToken, onSignOut, syncToken, onSyncToken }) {
+  const [linkTok, setLinkTok] = useState(legacyToken || '');
+  const [linkMsg, setLinkMsg] = useState('');
+  const [busy, setBusy] = useState('');
+  const [confirmDel, setConfirmDel] = useState('');
+  const run = async (key, fn) => { setBusy(key); try { await fn(); } finally { setBusy(''); } };
+  return (
+    <section className="card account">
+      <div className="card-head"><h3>Your account</h3><button className="link-btn" onClick={onSignOut}>Sign out</button></div>
+      <p className="acct-email">{session.email || account?.email}</p>
+
+      <details className="acct-more" open={Boolean(legacyToken) && !linkMsg}>
+        <summary>Used Progress before accounts? Link your existing data</summary>
+        <p className="muted small">Paste the original token (PROGRESS_TOKEN). Everything synced with it moves into this account, and shortcuts using it keep working.</p>
+        <div className="token-row">
+          <input type="password" value={linkTok} placeholder="Original token" onChange={(e) => setLinkTok(e.target.value)} autoComplete="off" />
+          <button className="primary small" disabled={!linkTok || busy === 'link'} onClick={() => run('link', async () => {
+            try { const r = await linkExistingData(linkTok); setLinkMsg(r.message); setTimeout(() => window.location.reload(), 1500); }
+            catch (e) { setLinkMsg(e.message); }
+          })}>{busy === 'link' ? 'Linking…' : 'Link'}</button>
+        </div>
+        {linkMsg && <p className="muted small">{linkMsg}</p>}
+      </details>
+
+      <details className="acct-more">
+        <summary>Sync token for Shortcuts and the watch</summary>
+        <p className="muted small">Only needed if you sync with Shortcuts rather than the app. It saves readings to this account. Making a new one stops the old one working.</p>
+        {syncToken
+          ? <><Copy text={syncToken} label="sync token" /><p className="muted small">Copy it now — it won’t be shown again. The shortcut guides below now include it.</p></>
+          : <button className="secondary" disabled={busy === 'tok'} onClick={() => run('tok', async () => onSyncToken(await createSyncToken()))}>{busy === 'tok' ? 'Making…' : 'Make a sync token'}</button>}
+      </details>
+
+      <details className="acct-more danger">
+        <summary>Delete my account</summary>
+        <p className="muted small">Permanently deletes your account and every reading and check-in in it. This can’t be undone. Export your data first if you want a copy.</p>
+        <div className="token-row">
+          <input value={confirmDel} placeholder="Type DELETE" onChange={(e) => setConfirmDel(e.target.value)} autoCapitalize="characters" />
+          <button className="danger-btn" disabled={confirmDel !== 'DELETE' || busy === 'del'} onClick={() => run('del', async () => { await deleteAccount(); window.location.reload(); })}>{busy === 'del' ? 'Deleting…' : 'Delete'}</button>
+        </div>
+      </details>
+    </section>
+  );
+}
+
 function HealthConnectCard({ native, token }) {
   const [state, setState] = useState('');
   const name = healthName();
@@ -67,7 +111,7 @@ function HealthConnectCard({ native, token }) {
     <section className="card">
       <div className="card-head"><h3>{name}</h3>{lastNativeSync() && <span className="muted small">Last read {new Date(lastNativeSync().at).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', weekday: 'short' })}</span>}</div>
       <p className="muted small">Progress reads your sleep, heart rate, HRV, resting heart rate, steps, active energy and breathing rate straight from {name} — no shortcuts needed. It reads every time you open the app.</p>
-      {!token && <p className="muted small"><b>Paste your token above first</b> so readings can be saved to your account.</p>}
+      {!token && <p className="muted small"><b>Sign in first</b> so readings can be saved to your account.</p>}
       <button className="primary" disabled={!token || native.syncing || state === 'connecting'} onClick={async () => {
         setState('connecting');
         try { await native.onConnect(); setState(''); } catch (e) { setState(e.message); }
@@ -106,11 +150,13 @@ function ResearchCheck({ onRun }) {
   );
 }
 
-export default function Settings({ token, onToken, demo, onDemo, data, a, onResearchRefresh, demoOnly, native }) {
+export default function Settings({ token, onToken, session, account, onSignOut, onCreateAccount, demo, onDemo, data, a, onResearchRefresh, demoOnly, native }) {
   const [draft, setDraft] = useState(token);
   const [generated, setGenerated] = useState('');
+  const [syncToken, setSyncToken] = useState('');
+  const connected = Boolean(session || token);
   const origin = demoOnly || typeof window === 'undefined' ? 'https://your-app.vercel.app' : window.location.origin;
-  const auth = `Bearer ${token || 'YOUR-TOKEN'}`;
+  const auth = `Bearer ${syncToken || (!session && token) || 'YOUR-SYNC-TOKEN'}`;
   const recent = a.days.slice(-7);
   const has = (k) => recent.some((d) => d[k] != null);
   const checks = [['Resting HR', 'rhr'], ['HRV', 'hrv'], ['Sleep', 'sleep_min'], ['Steps', 'steps'], ['Brisk movement', 'exercise'], ['Active energy', 'energy'], ['Breathing rate', 'resp'], ['Wrist temperature', 'temp'], ['Heart-rate readings (spikes)', 'hr_above_min']];
@@ -125,7 +171,19 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
     <div className="screen">
       <PageHeader eyebrow="Connection & setup" title="Settings" />
 
-      {!demoOnly && <section className="card">
+      {!demoOnly && session && (
+        <AccountCard session={session} account={account} legacyToken={token} onSignOut={onSignOut} syncToken={syncToken} onSyncToken={setSyncToken} demo={demo} onDemo={onDemo} />
+      )}
+
+      {!demoOnly && !session && token && (
+        <section className="card account-nudge">
+          <div className="card-head"><h3>Create your account</h3></div>
+          <p className="muted small">Accounts keep each person’s data separate and let you use the iPhone app. Create one, then tap <b>Link my existing data</b> — everything you’ve synced moves across and your shortcuts keep working.</p>
+          <button className="primary" onClick={onCreateAccount}>Create my account</button>
+        </section>
+      )}
+
+      {!demoOnly && !session && <section className="card">
         <div className="card-head"><h3>Your token</h3></div>
         <p className="muted small">The same secret goes in Vercel (as PROGRESS_TOKEN), here, and in each shortcut. It keeps your health data private.</p>
         <div className="token-row">
@@ -140,13 +198,13 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
         )}
         <label className="toggle-row">
           <div><strong>Show sample data</strong><span className="muted small">Explore the app before your watch is connected</span></div>
-          <input type="checkbox" className="switch" checked={demo || !token} disabled={!token} onChange={(e) => onDemo(e.target.checked)} />
+          <input type="checkbox" className="switch" checked={demo || !connected} disabled={!connected} onChange={(e) => onDemo(e.target.checked)} />
         </label>
       </section>}
 
-      {native?.on && <HealthConnectCard native={native} token={token} />}
+      {native?.on && <HealthConnectCard native={native} token={connected} />}
 
-      {token && !demo && (
+      {connected && !demo && (
         <section className="card">
           <div className="card-head"><h3>Data received (last 7 days)</h3></div>
           <div className="checks">
@@ -160,7 +218,7 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
         <div className="card-head"><h3>Set up the shortcuts</h3></div>
         <p className="muted small">Build these once in the Shortcuts app on your iPhone. Everything you need to paste is here — tap to copy.</p>
 
-        <Guide title="1 · Progress Sync" sub="Reads your watch data from Apple Health and sends it here" open={!token}>
+        <Guide title="1 · Progress Sync" sub="Reads your watch data from Apple Health and sends it here" open={!connected}>
           <p>No loops or variables: each health type is just two actions — find the samples, send them.</p>
           <ol>
             <li>In Shortcuts, tap <b>+</b> and name it <b>Progress Sync</b>.</li>
@@ -283,9 +341,9 @@ export default function Settings({ token, onToken, demo, onDemo, data, a, onRese
 
       {!demoOnly && <section className="card">
         <div className="card-head"><h3>Your data</h3></div>
-        <p className="muted small">Stored only in your own Supabase database. Export a spreadsheet to take to appointments.</p>
+        <p className="muted small">Stored securely and only ever shown to you. Export a spreadsheet to take to appointments.</p>
         <button className="secondary" onClick={() => exportCsv(a)}>Export CSV</button>
-        {token && !demo && (
+        {connected && !demo && (
           <>
             <p className="muted small">Recalculates bedtime, wake time and wake-ups for every night already stored. Run once after updating, or if sleep looks wrong.</p>
             <SleepRebuild />

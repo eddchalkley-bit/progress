@@ -2,7 +2,7 @@
 import { guard, readBody, db, fail } from './_lib.js';
 
 export default async function handler(req, res) {
-  if (!guard(req, res, ['POST'])) return;
+  if (!(await guard(req, res, ['POST']))) return;
   try {
     const { id } = readBody(req);
     const { error } = await db().from('research_updates').update({ reviewed: true }).eq('id', Number(id));
