@@ -1,6 +1,7 @@
 // Where you should be for each signal, and how far today is from it.
 import { fmtMinutes } from './time.js';
 import { analyseSleep } from './sleep.js';
+import { symptomWord } from './analysis.js';
 
 const n0 = (v) => Math.round(v).toLocaleString('en-GB');
 
@@ -34,10 +35,10 @@ export function targetSpecs(a) {
   };
 
   if (b.symptom != null) specs.symptom = {
-    key: 'symptom', label: 'Symptoms', unit: '/10', better: 'lower',
+    key: 'symptom', label: 'Symptoms', unit: '/10', better: 'lower', word: symptomWord,
     target: b.symptom, band: [Math.max(0, b.symptom - 1), b.symptom + 1], targetLabel: b.symptom.toFixed(1),
     fmt: (v) => v.toFixed(1), diff: (d) => `${d.toFixed(1)} points`,
-    note: 'Target is your usual level. Dots above the shaded range are worse-than-usual days; below are better days.',
+    note: `Average of your five symptoms, each rated 0 (none) to 10 (worst). Your usual is ${b.symptom.toFixed(1)}. Dots above the shaded range are worse-than-usual days; below are better days.`,
   };
 
   const stepTarget = env.ready ? env.safe : b.steps;

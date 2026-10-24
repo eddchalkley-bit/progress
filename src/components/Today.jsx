@@ -10,6 +10,7 @@ import { RecoveryCard, BalanceCard } from './Recovery.jsx';
 import EnergyCard from './EnergyCard.jsx';
 import SleepCard from './SleepCard.jsx';
 import { analyseSleep } from '../lib/sleep.js';
+import { SYMPTOMS, symptomWord, symptomRatings } from '../lib/analysis.js';
 import { energyBudget } from '../lib/energy.js';
 
 const fmt = (v) => (v == null ? '–' : Math.round(v).toLocaleString('en-GB'));
@@ -42,6 +43,7 @@ export function TargetCard({ spec, days, title, crash = false }) {
         <div>
           <h3>{title || spec.label}</h3>
           <div className="tcard-value">{latest ? spec.fmt(latest.value) : '–'}<span className="unit">{spec.unit}</span></div>
+          {spec.word && latest && <div className="tcard-word">{spec.word(latest.value)}</div>}
         </div>
         {st && <span className={`t-pill ${st}`}>{describe(latest.value, spec)}</span>}
       </div>
@@ -143,7 +145,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
         </div>
         <span className="chev">›</span>
       </button>
-      {(hasAm || hasPm) && <DayCompare yPm={ydPm} am={t.morning} pm={t.evening} />}
+      {(hasAm || hasPm) && <DayCompare t={t} y={y} />}
       {!y?.checkin && days.length > 1 && (
         <button className="link-btn" onClick={() => onCheckIn(y.date)}>Missed yesterday? Add yesterday’s check-in</button>
       )}
@@ -301,39 +303,76 @@ function fmtK(v) {
   return v >= 10000 ? `${(v / 1000).toFixed(1)}k` : Math.round(v).toLocaleString('en-GB');
 }
 
-// Last night → this morning → end of day, on the 0–10 symptom scale.
-function DayCompare({ yPm, am, pm }) {
-  const steps = [];
-  if (yPm != null && am != null) steps.push({ label: 'Last evening', v: yPm });
-  if (am != null) steps.push({ label: 'This morning', v: am });
-  if (pm != null) steps.push({ label: 'End of day', v: pm });
-  if (steps.length < 2) return null;
-  const change = (x, y) => {
-    const d = y - x;
-    if (Math.abs(d) < 0.5) return { t: 'same', c: '' };
-    return { t: `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}`, c: d > 0 ? 'worse' : 'better' };
-  };
+// How you feel right now, in plain words, with each symptom shown on its own
+// and compared with the previous check-in.
+function DayCompare({ t, y }) {
+  const am = symptomRatings(t, 'am');
+  const pm = symptomRatings(t, 'pm');
+  const yPm = symptomRatings(y, 'pm');
+  // Latest check-in, and the one before it to compare against.
+  const now = pm || am;
+  if (!now) return null;
+  const prev = pm ? am : yPm;
+  const nowLabel = pm ? 'This evening' : 'This morning';
+  const prevLabel = pm ? 'this morning' : 'last night';
+  const score = pm ? t.evening : t.morning;
+  const prevScore = pm ? t.morning : y?.evening;
+
+  const rows = SYMPTOMS.map((s) => ({ ...s, v: now[s.key], p: prev?.[s.key] ?? null }))
+    .filter((r) => r.v != null);
+  const shown = rows.filter((r) => r.v > 0 || (r.p ?? 0) > 0).sort((a, b) => b.v - a.v);
+  const clear = rows.filter((r) => r.v === 0 && !(r.p > 0)).map((r) => r.label.toLowerCase());
+
   let note = '';
-  if (am != null && pm != null) {
-    const d = pm - am;
-    note = d >= 1 ? 'Symptoms built up through the day — a sign the day asked a lot of you.'
-      : d <= -1 ? 'Better by the evening than first thing — mornings seem to be your hardest time.'
-      : 'Much the same morning and evening.';
-  } else if (yPm != null && am != null) {
-    note = am - yPm >= 1 ? 'Worse this morning than last night — go gently today.' : am - yPm <= -1 ? 'Better than last night — the rest helped.' : 'Overnight, much the same.';
+  if (prevScore != null) {
+    const d = score - prevScore;
+    if (pm) note = d >= 1 ? 'Symptoms built up through the day — today asked a lot of you. Keep tonight quiet.'
+      : d <= -1 ? 'Better than first thing — mornings seem to be your hardest time.'
+      : 'Much the same as this morning.';
+    else note = d >= 1 ? 'Worse than last night — go gently today.'
+      : d <= -1 ? 'Better than last night — the rest helped.'
+      : 'Much the same as last night.';
   }
+  const top = shown[0];
+
   return (
     <section className="card day-compare">
-      <div className="dc-row">
-        {steps.map((s, i) => (
-          <div key={s.label} className="dc-step">
-            {i > 0 && <span className={`dc-change ${change(steps[i - 1].v, s.v).c}`}>{change(steps[i - 1].v, s.v).t}</span>}
-            <div className="dc-val">{s.v.toFixed(1)}</div>
-            <div className="dc-label">{s.label}</div>
-          </div>
-        ))}
+      <div className="dc-head">
+        <div>
+          <div className="signal-label">How you feel · {nowLabel.toLowerCase()}</div>
+          <div className="dc-word">{symptomWord(score)}</div>
+        </div>
+        <div className="dc-score"><b>{score.toFixed(1)}</b><span>/10</span></div>
       </div>
-      <p className="muted small">{note} Symptom average, 0 none · 10 worst.</p>
+      <p className="dc-sub">
+        {top && top.v > 0
+          ? <>Mainly <b>{top.label.toLowerCase()}</b>{shown.length > 1 && shown[1].v > 0 ? <> and <b>{shown[1].label.toLowerCase()}</b></> : null}.</>
+          : 'No symptoms logged.'}
+        {note && <> {note}</>}
+      </p>
+      {shown.length > 0 && (
+        <div className="dc-list">
+          {shown.map((r) => {
+            const d = r.p == null ? null : r.v - r.p;
+            return (
+              <div key={r.key} className="dc-item">
+                <span className="dc-name">{r.label}</span>
+                <span className="dc-bar"><i style={{ width: `${r.v * 10}%` }} className={r.v >= 6 ? 'hi' : r.v >= 3 ? 'mid' : ''} /></span>
+                <span className="dc-num">{r.v}</span>
+                <span className={`dc-delta ${d > 0 ? 'worse' : d < 0 ? 'better' : ''}`}>
+                  {d == null ? '' : d === 0 ? 'same' : `${d > 0 ? '▲' : '▼'} ${Math.abs(d)}`}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {clear.length > 0 && <p className="muted small">No {joinList(clear)}.</p>}
+      <p className="muted small dc-key">Each symptom is rated 0 (none) to 10 (worst){prev ? `; arrows compare with ${prevLabel}` : ''}. The score is the average of all five.</p>
     </section>
   );
+}
+
+function joinList(xs) {
+  return xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}`;
 }

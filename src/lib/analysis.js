@@ -85,6 +85,30 @@ export function eveningScore(d) {
   return mean(SYMPTOMS.map((s) => (d.checkin[s.key] == null ? null : Number(d.checkin[s.key]))));
 }
 
+// Plain words for the 0–10 symptom average.
+export function symptomWord(v) {
+  if (v == null) return null;
+  if (v < 0.5) return 'None';
+  if (v < 2) return 'Very mild';
+  if (v < 4) return 'Mild';
+  if (v < 6) return 'Moderate';
+  if (v < 8) return 'Bad';
+  return 'Severe';
+}
+
+// Each symptom's 0–10 rating from one check-in ('am' or 'pm'), or null if none was logged.
+export function symptomRatings(d, when) {
+  if (!d?.checkin) return null;
+  const out = {};
+  let any = false;
+  for (const s of SYMPTOMS) {
+    const raw = d.checkin[when === 'am' ? `am_${s.key}` : s.key];
+    out[s.key] = raw == null ? null : Number(raw);
+    if (raw != null) any = true;
+  }
+  return any ? out : null;
+}
+
 // The day's score: the end-of-day check-in, or the morning one if that's all there is.
 export function symptomScore(d) {
   const ev = eveningScore(d);
