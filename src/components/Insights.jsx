@@ -146,7 +146,7 @@ export default function Insights({ a, research, onReview, demo }) {
 
       <div className="section-label">
         <h2>Last 30 days</h2>
-        <p className="muted small">Red dots under the bars mark crash days.</p>
+        <p className="muted small">Red dots under each chart mark crash days.</p>
         <TargetLegend crash />
       </div>
       {specs.symptom && <TargetCard spec={specs.symptom} days={days30} crash />}

@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { fmtDay, localDate } from '../lib/time.js';
 import { statusOf, describe, STATUS_LABEL } from '../lib/targets.js';
 
-// Bars grow up or down from YOUR target line. The shaded band is the target range.
-// Colour shows whether each day was on target, on the better side, a little off, or well off.
+// A simple trend line over the last few days. The shaded band is your target range,
+// the dashed line is your target, and each dot is coloured by how that day went.
+// (Steps keep plain bars from zero.)
 export function TargetChart({ series, spec, height = 150 }) {
   const lastIdx = series.length - 1;
   const [sel, setSel] = useState(() => {
@@ -26,6 +27,13 @@ export function TargetChart({ series, spec, height = 150 }) {
   const ty = y(spec.target);
   const cur = series[sel];
   const curStatus = statusOf(cur?.value, spec);
+  // Join consecutive days with a line; a missing day breaks it.
+  let linePath = '', pen = false;
+  series.forEach((s, i) => {
+    if (s.value == null) { pen = false; return; }
+    linePath += `${pen ? 'L' : 'M'}${cx(i).toFixed(1)},${y(s.value).toFixed(1)} `;
+    pen = true;
+  });
 
   return (
     <div className="tchart">
@@ -43,14 +51,14 @@ export function TargetChart({ series, spec, height = 150 }) {
               </g>
             );
           }
-          const top = Math.min(ty, y(s.value));
-          const h = Math.max(2.5, Math.abs(y(s.value) - ty));
-          return (
-            <rect key={s.date} x={cx(i) - bw / 2} y={s.value >= spec.target ? ty - h : top} width={bw} height={h} rx="2.5"
-              className={`t-bar ${s.value >= spec.target ? 'up' : 'down'} ${st} ${i === sel ? 'sel' : ''}`} style={{ '--i': i }} />
-          );
+          return null;
         })}
-        <line x1={padL} x2={padL + iw} y1={ty} y2={ty} className="t-target" />
+        <line x1={padL} x2={padL + iw} y1={ty} y2={ty} className={`t-target ${spec.zeroBars ? '' : 'dashed'}`} />
+        {!spec.zeroBars && <path d={linePath} className="t-line" />}
+        {!spec.zeroBars && series.map((s, i) => s.value != null && (
+          <circle key={'d' + s.date} cx={cx(i)} cy={y(s.value)} r={i === sel ? 6 : 4.5}
+            className={`t-dot ${statusOf(s.value, spec)} ${i === sel ? 'sel' : ''}`} />
+        ))}
         <text x={W - padR + 6} y={ty - 3} className="t-tlabel">{spec.targetLabel}</text>
         <text x={W - padR + 6} y={ty + 9} className="t-tsub">target</text>
         {series.map((s, i) => s.crash && <circle key={'c' + s.date} cx={cx(i)} cy={H - padB + 8} r="2.6" className="t-crash" />)}

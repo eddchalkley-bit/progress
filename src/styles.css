@@ -341,6 +341,11 @@ textarea { width: 100%; border: 1px solid var(--line); background: var(--bg); bo
 .t-axis { fill: var(--muted); font-size: 10.5px; }
 .t-missing { fill: var(--muted); opacity: 0.5; }
 .t-crash { fill: var(--red); }
+.t-target.dashed { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 4; opacity: 0.8; }
+.t-line { fill: none; stroke: var(--on); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; opacity: 0.55; }
+.t-dot { stroke: var(--surface); stroke-width: 2; transition: r 0.15s; }
+.t-dot.on { fill: var(--on); } .t-dot.good { fill: var(--green); } .t-dot.warn { fill: var(--amber); } .t-dot.bad { fill: var(--red); }
+.t-dot.sel { stroke: var(--ink); stroke-width: 2; }
 .t-bar { transition: opacity 0.15s; }
 .t-bar.on { fill: var(--on); }
 .t-bar.good { fill: var(--green); }
@@ -839,8 +844,8 @@ body {
 .reveal-ready [data-inview] :is(.t-bar, .sl-week .b, .trend .bar) { transform: none; }
 
 /* Markers and dots arrive after the fill */
-.reveal-ready :is(.en-mark, .en-now, .rec-dot, .rec-normal, .bal-limit, .sl-week .need, .sl-week .need-l, .sl-week .o, .t-target) { opacity: 0; transition: opacity 0.5s ease 0.8s; }
-.reveal-ready [data-inview] :is(.en-mark, .en-now, .rec-dot, .rec-normal, .bal-limit, .sl-week .need, .sl-week .need-l, .sl-week .o, .t-target) { opacity: 1; }
+.reveal-ready :is(.en-mark, .en-now, .rec-dot, .rec-normal, .bal-limit, .sl-week .need, .sl-week .need-l, .sl-week .o, .t-target, .t-line, .t-dot) { opacity: 0; transition: opacity 0.5s ease 0.8s; }
+.reveal-ready [data-inview] :is(.en-mark, .en-now, .rec-dot, .rec-normal, .bal-limit, .sl-week .need, .sl-week .need-l, .sl-week .o, .t-target, .t-line, .t-dot) { opacity: 1; }
 
 /* Numbers settle in */
 .reveal-ready :is(.en-stats b, .rec-score, .sl-big, .sl-impact-v, .tcard-value) { display: inline-block; transform: translateY(6px); opacity: 0.001; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s, opacity 0.6s ease 0.1s; }
