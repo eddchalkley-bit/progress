@@ -89,7 +89,11 @@ export function makeDemoData(today, days = 84) {
         pem, screen_hours: sc, phone_hours: phoneH, laptop_hours: laptopH, social: so, rests, food: Math.max(1, Math.min(5, Math.round(3 + (r() - 0.5) * 2.4))), mental: Math.floor(r() * 3), stress: Math.floor(r() * 2.6), notes: null,
       });
     }
-    if (easing) push('nap_min', 30 + Math.round(r() * 40));
+    if (easing || isToday) {
+      const napMin = isToday ? 35 : 30 + Math.round(r() * 40);
+      const napStart = isToday ? 13 * 60 + 10 : 12 * 60 + 30 + Math.round(r() * 150);
+      push('nap_min', napMin); push('nap_count', 1); push('nap_start_min', napStart); push('nap_end_min', napStart + napMin + 5);
+    }
 
     // Heart-rate spikes above the ceiling (resting + 15), tagged most of the time.
     const ceiling = 75;

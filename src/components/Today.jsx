@@ -9,6 +9,7 @@ import { fmtHM } from '../lib/screens.js';
 import { RecoveryCard, BalanceCard } from './Recovery.jsx';
 import EnergyCard from './EnergyCard.jsx';
 import SleepCard from './SleepCard.jsx';
+import NapCard from './NapCard.jsx';
 import { analyseSleep } from '../lib/sleep.js';
 import { SYMPTOMS, symptomWord, symptomRatings } from '../lib/analysis.js';
 import { energyBudget } from '../lib/energy.js';
@@ -68,7 +69,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
 
   const plan = dayPlan(a);
   const sleep = analyseSleep(a);
-  const energy = energyBudget(a, plan.factor, plan.hourFrac, sleep.potential);
+  const energy = { ...energyBudget(a, plan.factor, plan.hourFrac, sleep.potential), napLift: sleep.napLift };
   const notes = noticings(a);
   const planMax = plan.budget ? Math.max(plan.budget, plan.steps) * 1.1 : 1;
 
@@ -127,6 +128,8 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
       <EnergyCard e={energy} onLogCrash={() => onCheckIn(undefined, 'evening')} />
 
       <SleepCard s={sleep} energy={energy} />
+
+      <NapCard s={sleep} />
 
       <RecoveryCard a={a} />
       <BalanceCard a={a} />

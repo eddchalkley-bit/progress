@@ -3,6 +3,7 @@
 // so its effect is read from day D (symptoms) and D..D+1 (crashes).
 import { median, mean, percentile } from './analysis.js';
 import { fmtMinutes, fmtClock } from './time.js';
+import { analyseNaps } from './naps.js';
 
 export const SLEEP = {
   defaultNeed: 480,      // NHS 7–9h: 8h until your own need is learned
@@ -110,6 +111,14 @@ export function analyseSleep(a) {
   if (body === 'strained') potential -= 0.1;
   potential = clamp(Math.round(potential * 100) / 100, 0.7, 1.1);
 
+  // ---- 6b. Daytime nap: wins back part of a poor night's shortfall (never above your normal) ----
+  const nap = analyseNaps(a, { need, usualBed, targetBed });
+  const potentialNight = potential;
+  if (nap.today && potential < 1 && nap.share > 0) {
+    potential = Math.round((potential + (1 - potential) * nap.share) * 100) / 100;
+  }
+  const napLift = Math.round((potential - potentialNight) * 100);
+
   // ---- 7. What sleep does for YOU (needs enough nights on both sides) ----
   const judged = nights.filter((i) => i < t && (days[i].symptom != null || a.crashes.flags[i] || a.crashes.flags[i + 1]));
   const effects = [];
@@ -162,7 +171,7 @@ export function analyseSleep(a) {
   return {
     need, learned, goodNights: good.length, nightsNeeded: Math.max(0, SLEEP.minGoodNights - good.length),
     usualBed, usualWake, bedSpread, targetBed, usualAwake, usualWakeups,
-    debt, score, parts, body, hrvPct, rhrDelta, potential,
+    debt, score, parts, body, hrvPct, rhrDelta, potential, potentialNight, napLift, nap,
     last: has ? { sleep: n.sleep_min, nap: n.nap_min ?? 0, bed: n.bed_min ?? null, wake: n.wake_min ?? null, awake: n.awake_min ?? null, wakeups: n.wakeups ?? null, deep: n.deep_min ?? null, rem: n.rem_min ?? null } : null,
     usualDeep: median(last28.map((i) => days[i].deep_min)), usualRem: median(last28.map((i) => days[i].rem_min)),
     effects, shortCrash, confidence, judgedNights: judged.length, coach, series,

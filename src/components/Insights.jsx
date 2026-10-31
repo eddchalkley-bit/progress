@@ -1,6 +1,7 @@
 import PageHeader from './PageHeader.jsx';
 import { TargetLegend } from './Charts.jsx';
 import { SleepInsights } from './SleepCard.jsx';
+import { NapInsights } from './NapCard.jsx';
 import { analyseSleep } from '../lib/sleep.js';
 import { TargetCard } from './Today.jsx';
 import { targetSpecs } from '../lib/targets.js';
@@ -152,6 +153,7 @@ export default function Insights({ a, research, onReview, demo }) {
       {specs.symptom && <TargetCard spec={specs.symptom} days={days30} crash />}
       {specs.steps && <TargetCard spec={specs.steps} days={days30.slice(0, -1)} title="Steps vs your envelope" crash />}
       <SleepInsights s={analyseSleep(a)} />
+      <NapInsights s={analyseSleep(a)} />
 
       <section className="card">
         <div className="card-head"><h3>What’s worked for you</h3></div>

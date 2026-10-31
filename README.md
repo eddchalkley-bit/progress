@@ -55,7 +55,12 @@ sleep|2026-10-17T23:41:00+01:00|2026-10-18T00:12:00+01:00|Core
 Supported codes are `rhr hrv hr walkhr steps energy exercise resp spo2 sleep`.
 
 - Quantities are grouped by day in the shortcut. Each sync re-sends the last 3 days, and the oldest (possibly partial) day in a batch is ignored. This makes syncs safe to repeat, and a missed run gets filled in by the next one.
-- Raw sleep stages are stored. Nightly totals are calculated as the *union* of overlapping sources, so iPhone and Watch together don't double-count. Segments ending between 14:00 and 18:00 count as naps.
+- Raw sleep stages are stored. Nightly totals are calculated as the *union* of overlapping sources, so iPhone and Watch together don't double-count. Naps are detected separately from the night: any bout of sleep that starts between 09:00 and 20:00, apart from your main sleep, counts as a nap (under 10 minutes is ignored). Each nap day stores `nap_min`, `nap_count`, `nap_start_min` and `nap_end_min`, filed under the day it started, so a nap never moves your bedtime or wake time.
+
+### Naps
+- **Today:** a nap shows on the Today screen. If last night was short, it wins back part of the shortfall in today's energy potential (up to half for a ~90 min nap, never above your normal). It also says what the nap is likely to do to tonight's sleep.
+- **Over time:** Progress compares the day *after* your naps with the day after no nap: bedtime, night length, wake-ups, next-day symptoms and crashes, and (with enough days) after a short night specifically, plus long vs short and late vs early naps. If your own data say naps help, the credit goes up; if they cost you more than they give, it drops to nothing. Needs about 5 nap days and 5 without before any pattern is shown.
+- After updating, run **Settings → Rebuild sleep** once so old nights are re-read with the new nap rules.
 - **Sync schedule:** on waking (sleep, overnight HRV, resting HR), 13:00 (pacing during the day) and 21:00 (to complete the day). Apple Health can't be read while the iPhone is locked, which is why the morning sync uses the *Waking Up* trigger.
 
 **Screen time and social interaction** go in the daily check-in. Shortcuts can't read Screen Time data.

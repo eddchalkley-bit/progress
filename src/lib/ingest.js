@@ -174,17 +174,74 @@ function unionMinutes(intervals) {
   return total / 60000;
 }
 
-// Turns raw sleep samples into nightly totals (union of overlapping sources).
+// ---------- naps ----------
+// A nap is a separate bout of sleep during the day. It is NOT part of the night, so it must never
+// move your bedtime / wake time. Rules (all local time):
+//   * asleep samples less than 90 min apart join into one session
+//   * for each morning, the longest session that starts overnight (before 09:00 or from 20:00) is the night
+//   * any other session that starts between 09:00 and 20:00 is a nap, filed under the day it started
+//   * under 10 min of actual sleep is ignored (wrist-detection blips)
+export const NAP = { sessionGapMin: 90, minMin: 10, dayFrom: 9, dayTo: 20 };
+
+const ASLEEP_STAGES = ['core', 'deep', 'rem', 'asleep'];
+
+function sessionsOf(intervals) {
+  const sorted = intervals.map((i) => [i[0], i[1]]).sort((a, b) => a[0] - b[0]);
+  const out = [];
+  for (const iv of sorted) {
+    const last = out[out.length - 1];
+    if (last && iv[0] - last.end < NAP.sessionGapMin * 60000) { last.end = Math.max(last.end, iv[1]); last.parts.push(iv); }
+    else out.push({ start: iv[0], end: iv[1], parts: [iv] });
+  }
+  for (const s of out) s.min = unionMinutes(s.parts);
+  return out;
+}
+
+// Splits all asleep time into night sessions and naps.
+export function splitNaps(samples, tz = DEFAULT_TZ) {
+  const asleep = [];
+  for (const s of samples) if (ASLEEP_STAGES.includes(s.stage)) asleep.push([new Date(s.start_at).getTime(), new Date(s.end_at).getTime()]);
+  const sessions = sessionsOf(asleep);
+  const byKey = new Map();
+  for (const s of sessions) {
+    const end = new Date(s.end);
+    s.key = localHour(end, tz) >= 18 ? addDays(localDate(end, tz), 1) : localDate(end, tz);
+    s.startHour = localHour(new Date(s.start), tz);
+    s.overnight = s.startHour < NAP.dayFrom || s.startHour >= NAP.dayTo;
+    if (!byKey.has(s.key)) byKey.set(s.key, []);
+    byKey.get(s.key).push(s);
+  }
+  const naps = [], blips = [];
+  for (const list of byKey.values()) {
+    const nights = list.filter((s) => s.overnight);
+    const main = nights.length ? nights.reduce((a, b) => (b.min > a.min ? b : a)) : null;
+    for (const s of list) {
+      if (s === main) { s.isNight = true; continue; }
+      if (!s.overnight && s.min >= NAP.minMin) { s.isNap = true; naps.push(s); }
+      else if (!s.overnight) blips.push(s);   // a few minutes of daytime "sleep": not a nap, not the night
+      else s.isNight = true;                  // another overnight bout (a broken night)
+    }
+  }
+  return { sessions, naps, blips };
+}
+
+// Turns raw sleep samples into nightly totals (union of overlapping sources) plus daily nap totals.
 export function summariseNights(samples, tz = DEFAULT_TZ) {
+  const { naps, blips } = splitNaps(samples, tz);
+  const skip = naps.concat(blips);
+  const inNap = (a, b) => skip.some((n) => a < n.end && b > n.start);
   const nights = new Map();
   for (const s of samples) {
     const start = new Date(s.start_at), end = new Date(s.end_at);
-    const { key, nap } = nightOf(end, tz);
-    if (!nights.has(key)) nights.set(key, { asleep: [], deep: [], rem: [], core: [], awake: [], inbed: [], nap: [] });
+    const a = start.getTime(), b = end.getTime();
+    const isAsleep = ASLEEP_STAGES.includes(s.stage);
+    if (inNap(a, b)) continue;                                   // belongs to a nap, not the night
+    const h = localHour(end, tz);
+    if (!isAsleep && localHour(start, tz) >= NAP.dayFrom && h < NAP.dayTo && h >= NAP.dayFrom) continue; // daytime awake / in-bed markers
+    const key = h >= 18 ? addDays(localDate(end, tz), 1) : localDate(end, tz);
+    if (!nights.has(key)) nights.set(key, { asleep: [], deep: [], rem: [], core: [], awake: [], inbed: [] });
     const n = nights.get(key);
-    const iv = [start.getTime(), end.getTime()];
-    const isAsleep = ['core', 'deep', 'rem', 'asleep'].includes(s.stage);
-    if (nap) { if (isAsleep) n.nap.push(iv); continue; }
+    const iv = [a, b];
     if (isAsleep) n.asleep.push(iv);
     if (n[s.stage]) n[s.stage].push(iv);
   }
@@ -193,7 +250,7 @@ export function summariseNights(samples, tz = DEFAULT_TZ) {
     const asleep = unionMinutes(n.asleep);
     const inbed = unionMinutes(n.inbed);
     const sleepMin = asleep > 0 ? asleep : inbed;
-    const push = (metric, v) => { if (v > 0 || (metric !== 'nap_min' && sleepMin > 0)) out.push({ date, metric, value: Math.round(v) }); };
+    const push = (metric, v) => { if (v > 0 || sleepMin > 0) out.push({ date, metric, value: Math.round(v) }); };
     if (sleepMin > 0) {
       push('sleep_min', sleepMin);
       push('deep_min', unionMinutes(n.deep));
@@ -208,8 +265,22 @@ export function summariseNights(samples, tz = DEFAULT_TZ) {
         if (timing.wakeups != null) out.push({ date, metric: 'wakeups', value: timing.wakeups });
       }
     }
-    const napMin = unionMinutes(n.nap);
-    if (napMin > 0) out.push({ date, metric: 'nap_min', value: Math.round(napMin) });
+  }
+
+  // Naps: one set of daily totals per local day the nap started on.
+  const napDays = new Map();
+  for (const nap of naps) {
+    const date = localDate(new Date(nap.start), tz);
+    if (!napDays.has(date)) napDays.set(date, []);
+    napDays.get(date).push(nap);
+  }
+  for (const [date, list] of napDays) {
+    list.sort((x, y) => x.start - y.start);
+    const mins = (ms) => localMinutes(new Date(ms), tz);
+    out.push({ date, metric: 'nap_min', value: Math.round(list.reduce((s, x) => s + x.min, 0)) });
+    out.push({ date, metric: 'nap_count', value: list.length });
+    out.push({ date, metric: 'nap_start_min', value: mins(list[0].start) });
+    out.push({ date, metric: 'nap_end_min', value: mins(list[list.length - 1].end) });
   }
   return out;
 }

@@ -66,7 +66,7 @@ export default function EnergyCard({ e, onLogCrash }) {
 
       <p className="muted small en-foot">
         {e.carry > 0 && <>Budget is {e.carry} EU lower for load carried over from the last two days. </>}
-        {e.potential < 1 && e.factor >= e.potential && <>Lowered to {Math.round(e.potential * 100)}% of your normal after last night. </>}
+        {e.potential < 1 && e.factor >= e.potential && <>Lowered to {Math.round(e.potential * 100)}% of your normal after last night{e.napLift > 0 ? ` (your nap won back ${e.napLift}%)` : ''}. </>}
         {e.factor < 1 && e.factor < e.potential && <>Set to {Math.round(e.factor * 100)}% of your normal because of today’s status. </>}
         {e.potential > 1 && e.factor >= 1 && <>Last night lifted your potential to {e.potentialEU} EU, but the budget stays at your normal so you bank it. </>}
         {e.potential > 1 && e.factor < 1 && <>Last night helped, but today’s status still calls for a lighter day. </>}

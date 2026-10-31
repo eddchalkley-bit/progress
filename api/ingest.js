@@ -5,6 +5,8 @@ import { addDays, fmtMinutes, localDate } from '../src/lib/time.js';
 import { detectSpikes, minutesByDay, eventLabel } from '../src/lib/spikes.js';
 import { median } from '../src/lib/analysis.js';
 
+const NAP_METRICS = ['nap_min', 'nap_count', 'nap_start_min', 'nap_end_min'];
+
 function chunk(arr, n) {
   const out = [];
   for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
@@ -42,7 +44,8 @@ export default async function handler(req, res) {
         if (error) throw error;
       }
       // Recalculate every night touched by this batch from everything stored.
-      const nights = [...new Set(sleep.map((s) => nightOf(new Date(s.end_at), TZ).key))].sort();
+      // A night is keyed by the morning you woke; a nap by the day it started — touch both.
+      const nights = [...new Set(sleep.flatMap((s) => [nightOf(new Date(s.end_at), TZ).key, localDate(new Date(s.start_at), TZ)]))].sort();
       const from = addDays(nights[0], -2) + 'T00:00:00Z';
       const to = addDays(nights[nights.length - 1], 1) + 'T00:00:00Z';
       const samples = [];
@@ -54,6 +57,13 @@ export default async function handler(req, res) {
         if (data.length < 1000) break;
       }
       const summary = summariseNights(samples, TZ).filter((r) => nights.includes(r.date));
+      // A nap that was merged or mis-filed earlier should vanish once it is classified properly.
+      const napDates = [...new Set(summary.filter((r) => r.metric === 'nap_min').map((r) => r.date))];
+      const staleNaps = nights.filter((d) => !napDates.includes(d));
+      if (staleNaps.length) {
+        const { error } = await T('daily_metrics').delete().in('date', staleNaps).in('metric', NAP_METRICS);
+        if (error) throw error;
+      }
       for (const part of chunk(summary.map((r) => ({ ...r, updated_at: now })), 500)) {
         const { error } = await T('daily_metrics').upsert(part, { onConflict: 'date,metric' });
         if (error) throw error;
