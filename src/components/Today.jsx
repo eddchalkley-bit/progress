@@ -69,7 +69,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
 
   const plan = dayPlan(a);
   const sleep = analyseSleep(a);
-  const energy = { ...energyBudget(a, plan.factor, plan.hourFrac, sleep.potential), napLift: sleep.napLift };
+  const energy = { ...energyBudget(a, plan.factor, plan.hourFrac, sleep.potential, undefined, sleep.nap.verdict), napLift: sleep.napLift };
   const notes = noticings(a);
   const planMax = plan.budget ? Math.max(plan.budget, plan.steps) * 1.1 : 1;
 
@@ -129,7 +129,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
 
       <SleepCard s={sleep} energy={energy} />
 
-      <NapCard s={sleep} />
+      <NapCard s={sleep} energy={energy} />
 
       <RecoveryCard a={a} />
       <BalanceCard a={a} />

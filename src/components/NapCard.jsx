@@ -1,7 +1,7 @@
 import { fmtMinutes, fmtClock } from '../lib/time.js';
 
 // Today: a nap picked up from Apple Health, what it did to today's energy, and what it means for tonight.
-export default function NapCard({ s }) {
+export default function NapCard({ s, energy }) {
   const n = s.nap;
   const T = n.today;
   if (!T) return null;
@@ -21,6 +21,7 @@ export default function NapCard({ s }) {
     impact = 'Too short to change today’s budget. Rest still counts towards recovery.';
   }
 
+  const rest = energy?.ready ? energy.rest : 0;
   const evidence = n.effects.filter((e) => ['sym', 'short', 'bed', 'length', 'time'].includes(e.key)).slice(0, 2);
 
   return (
@@ -43,6 +44,17 @@ export default function NapCard({ s }) {
           <span className="sl-impact-v">{lifted ? `+${s.napLift}%` : '±0%'}</span>
         </div>
         <p>{impact}</p>
+      </div>
+
+      <div className={`sl-impact ${rest > 0 ? 'up' : ''}`}>
+        <div>
+          <span className="sl-impact-k">Counts as rest</span>
+          <span className="sl-impact-v">{rest > 0 ? `−${rest} EU` : '0 EU'}</span>
+        </div>
+        <p>{rest > 0
+          ? 'Taken off what you’ve used today, and carried into tomorrow like any other load. Rest lowers your load; it doesn’t raise your budget.'
+          : n.verdict === 'hurts' ? 'Not counted: in your own data, naps haven’t helped the next day.'
+            : energy?.ready ? 'Too short to count as rest.' : 'Your energy budget appears once Progress has about a week of data.'}</p>
       </div>
 
       {n.tonight && (

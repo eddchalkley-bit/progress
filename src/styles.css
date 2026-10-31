@@ -645,6 +645,7 @@ input[type=range]::-webkit-slider-thumb { margin-top: -9px; border: 0; box-shado
 .en-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .en-legend .sw-phys { background: var(--accent-2); }
 .en-legend .sw-stress { background: var(--accent); }
+.en-legend .sw-rest { background: var(--green); }
 .en-legend .dot-now { width: 9px; height: 9px; border: 0; background: var(--ink); }
 .en-foot { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); line-height: 1.45; }
 

@@ -61,6 +61,7 @@ export default function EnergyCard({ e, onLogCrash }) {
       <div className="en-legend">
         <span><i className="sw-phys" />Physical {e.physical}</span>
         <span><i className="sw-stress" />Stress {e.stress}</span>
+        {e.rest > 0 && <span><i className="sw-rest" />Nap rest −{e.rest}</span>}
         {e.byNow != null && <span><i className="dot-now" />Even pace by now ~{e.byNow}</span>}
       </div>
 

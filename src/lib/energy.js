@@ -21,16 +21,28 @@ export const ENERGY = {
   defaultThresholdX: 1.35,  // until 2 crashes are logged: crash line = normal × this
   minCrashes: 2,
   amberAt: 0.85,            // amber zone starts at 85% of the crash line
+  euPerNapMin: 0.15,        // rest credit: a nap takes this much off the day's load per minute asleep
+  napCreditMax: 15,         // ...up to this many EU a day (about a 100 minute nap)
 };
 
+// Rest is recovery, so a nap counts against the day's load (and carries into the next two days like load does).
+// It lowers what you've used; it never raises the budget. Scaled by what your own data says about naps.
+export function napCredit(d, k = ENERGY) {
+  const min = d?.nap_min ?? 0;
+  if (min < 10) return 0;
+  const mult = k.napVerdict === 'helps' ? 1.5 : k.napVerdict === 'mixed' ? 0.6 : k.napVerdict === 'hurts' ? 0 : 1;
+  return Math.min(k.napCreditMax, min * k.euPerNapMin) * mult;
+}
+
 export function dayLoad(d, k = ENERGY) {
-  if (!d) return { physical: 0, stress: 0, total: 0, has: false };
+  if (!d) return { physical: 0, stress: 0, rest: 0, total: 0, has: false };
   const physical = d.energy != null ? d.energy / k.kcalPerEU : d.steps != null ? d.steps / k.stepsPerEU : 0;
   let stress = (d.hr_above_min ?? 0) * k.euPerMinAboveCeiling;
   const c = d.checkin;
   if (c) stress += ((Number(c.stress) || 0) + (Number(c.mental) || 0)) * k.euPerCheckinPoint;
   const has = d.energy != null || d.steps != null || d.hr_above_min != null;
-  return { physical, stress, total: physical + stress, has };
+  const rest = has ? Math.min(napCredit(d, k), physical + stress) : 0;   // rest can't take a day below zero
+  return { physical, stress, rest, total: physical + stress - rest, has };
 }
 
 /**
@@ -39,8 +51,10 @@ export function dayLoad(d, k = ENERGY) {
  * frac:   share of the waking day gone (dayPlan's hourFrac) — used for the "even pace" marker
  * potential: what last night's sleep and overnight recovery did to today's capacity
  *            (analyseSleep().potential, ×your normal, 0.7–1.1)
+ * napVerdict: analyseSleep().nap.verdict — how much rest credit a nap earns (see napCredit)
  */
-export function energyBudget(a, factor = 1, frac = null, potential = 1, k = ENERGY) {
+export function energyBudget(a, factor = 1, frac = null, potential = 1, k = ENERGY, napVerdict = undefined) {
+  if (napVerdict !== undefined) k = { ...k, napVerdict };
   const days = a.days, t = days.length - 1;
   const flags = a.crashes?.flags || [];
   const L = (i) => (i >= 0 ? dayLoad(days[i], k).total : 0);
@@ -89,7 +103,7 @@ export function energyBudget(a, factor = 1, frac = null, potential = 1, k = ENER
   const r = Math.round;
   return {
     ready: true,
-    used: r(used), physical: r(today.physical), stress: r(today.stress),
+    used: r(used), physical: r(today.physical), stress: r(today.stress), rest: r(today.rest),
     budget: r(budget), crashLine: r(crashLine), amberLine: r(amberLine),
     byNow: byNow != null ? r(byNow) : null,
     carry: r(carry), normal: r(baseline), factor, potential, potentialEU: r(Math.max(0, potentialEU)),

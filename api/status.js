@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     if (req.query?.format === 'json') return res.status(200).json(a.status);
     const plan = dayPlan(a);
     const sleep = analyseSleep(a);
-    const energy = energyBudget(a, plan.factor, plan.hourFrac, sleep.potential);
+    const energy = energyBudget(a, plan.factor, plan.hourFrac, sleep.potential, undefined, sleep.nap.verdict);
     const rec = recoveryFor(a.days, a.days.length - 1);
     const extra = [];
     if (rec) extra.push(`Recovery ${rec.score}% of your normal`);
