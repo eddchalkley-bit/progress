@@ -78,15 +78,21 @@ function exertionFor(days, i) {
 // The day's limit follows recovery (% of a usual day), never more than 110%.
 export const limitFor = (score) => Math.min(110, Math.round(score));
 
-export function balanceDays(days, n = 7) {
+// potentialAt(i): optional — the sleep-adjusted capacity for day i (analyseSleep potential, ×normal).
+// A day's limit is then the lower of what your body signals say and what that night's sleep allows.
+export function balanceDays(days, n = 7, potentialAt = null) {
   const out = [];
   for (let i = Math.max(0, days.length - n); i < days.length; i++) {
     const r = recoveryFor(days, i);
     const e = exertionFor(days, i);
-    const limit = r ? limitFor(r.score) : null;
+    const bodyLimit = r ? limitFor(r.score) : null;
+    const pot = potentialAt && r ? potentialAt(i) : null;
+    const sleepLimit = pot != null ? Math.round(pot * 100) : null;
+    const limit = bodyLimit == null ? null : sleepLimit != null ? Math.min(bodyLimit, sleepLimit) : bodyLimit;
     out.push({
       date: days[i].date, recovery: r?.score ?? null, level: r?.level ?? null,
       exertion: e?.value ?? null, basis: e?.basis ?? null, limit,
+      cappedBySleep: limit != null && bodyLimit != null && limit < bodyLimit,
       over: limit != null && e != null ? e.value > limit + 10 : null,
       partial: i === days.length - 1,
     });

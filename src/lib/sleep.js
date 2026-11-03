@@ -11,11 +11,15 @@ export const SLEEP = {
   minGoodNights: 8,      // good-day nights needed before the need is "learned"
   minGroup: 5,           // nights per side before comparing (insights)
   latency: 15,           // minutes to fall asleep, used for the bedtime target
+  napPayback: 0.5,       // a nap pays back sleep debt at half value (it isn't the same as night sleep)...
+  napPaybackMax: 60,     // ...and by at most this many minutes a day
 };
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const round15 = (m) => Math.round(m / 15) * 15;
-const total = (d) => (d.sleep_min == null ? null : d.sleep_min + (d.nap_min || 0));
+// Sleep that counts towards paying back debt: the night, plus part of any nap.
+const paidBack = (d) => (d.sleep_min == null ? null
+  : d.sleep_min + ((d.nap_min ?? 0) >= 10 ? Math.min(d.nap_min * SLEEP.napPayback, SLEEP.napPaybackMax) : 0));
 
 // Was this a good / hard day to wake into?  (null = not enough info)
 function outcome(a, i) {
@@ -47,7 +51,9 @@ export function analyseSleep(a) {
   const good = nights.filter((i) => i < t && outcome(a, i) === 'good');
   const learned = good.length >= SLEEP.minGoodNights;
   // Upper-middle of your good nights, so a habit of short sleep doesn't drag the target down.
-  const need = learned ? clamp(round15(percentile(good.map((i) => total(days[i])), 0.6)), SLEEP.minNeed, SLEEP.maxNeed) : SLEEP.defaultNeed;
+  // Night sleep only: a nap that day came after the night and would inflate the need (and every shortfall
+  // measured against it). Naps still count towards paying back sleep debt below.
+  const need = learned ? clamp(round15(percentile(good.map((i) => days[i].sleep_min), 0.6)), SLEEP.minNeed, SLEEP.maxNeed) : SLEEP.defaultNeed;
 
   // ---- 2. Rhythm: usual bedtime / wake time, and how regular they are ----
   const last28 = recent(29);
@@ -61,10 +67,10 @@ export function analyseSleep(a) {
   const usualAwake = median(last28.map((i) => days[i].awake_min));
   const usualWakeups = median(last28.map((i) => days[i].wakeups));
 
-  // ---- 4. Sleep debt over the last 7 nights (naps count towards paying it back) ----
+  // ---- 4. Sleep debt over the last 7 nights (a nap pays back half its minutes, up to an hour a day) ----
   const week = [];
   for (let i = t - 6; i <= t; i++) if (i >= 0) week.push(days[i]);
-  const weekTotals = week.map(total).filter((v) => v != null);
+  const weekTotals = week.map(paidBack).filter((v) => v != null);
   const debt = weekTotals.length >= 3 ? Math.max(0, weekTotals.reduce((s, v) => s + (need - v), 0)) : null;
 
   // ---- 5. Last night ----
@@ -122,7 +128,7 @@ export function analyseSleep(a) {
   // ---- 7. What sleep does for YOU (needs enough nights on both sides) ----
   const judged = nights.filter((i) => i < t && (days[i].symptom != null || a.crashes.flags[i] || a.crashes.flags[i + 1]));
   const effects = [];
-  const dur = compare(a, judged, (i) => total(days[i]) >= need - 15, 'duration');
+  const dur = compare(a, judged, (i) => days[i].sleep_min >= need - 15, 'duration');
   if (dur) effects.push({ ...dur, text: dur.diff != null && dur.diff > 0.2
     ? `After nights of ${fmtMinutes(need)}+ your symptoms run ${dur.diff.toFixed(1)} points lower than after shorter nights.`
     : `Sleep length hasn’t made a clear difference to how you feel the next day so far.` });
@@ -181,4 +187,13 @@ export function analyseSleep(a) {
 export function scoreWord(s) {
   if (s == null) return '–';
   return s >= 85 ? 'Restorative' : s >= 70 ? 'Good' : s >= 50 ? 'Fair' : 'Poor';
+}
+
+// What today's analysis would have said on day i, using only data up to that day.
+// Used to give each past day its own sleep-adjusted limit.
+export function sleepPotentialAt(a, i) {
+  if (i >= a.days.length - 1) return analyseSleep(a).potential;
+  const cut = i + 1;
+  const view = { ...a, days: a.days.slice(0, cut), symBase: a.symBase.slice(0, cut), crashes: { ...a.crashes, flags: a.crashes.flags.slice(0, cut) } };
+  return analyseSleep(view).potential;
 }

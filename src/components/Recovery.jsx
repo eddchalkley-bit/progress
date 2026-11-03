@@ -1,3 +1,4 @@
+import { sleepPotentialAt } from '../lib/sleep.js';
 import { recoveryFor, recoveryLabel, FULL_BASELINE, balanceDays, balanceSummary, healthCheck, limitFor } from '../lib/recovery.js';
 
 const signedPct = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v * 100))}%`;
@@ -5,7 +6,7 @@ const signedNum = (v, unit) => `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v))
 // Position on the 60–140% recovery scale
 const pos = (v) => `${Math.max(0, Math.min(100, ((v - 60) / 80) * 100))}%`;
 
-export function RecoveryCard({ a }) {
+export function RecoveryCard({ a, sleep }) {
   const days = a.days;
   const r = recoveryFor(days, days.length - 1);
   const hc = healthCheck(days);
@@ -19,7 +20,12 @@ export function RecoveryCard({ a }) {
       </section>
     );
   }
-  const limit = limitFor(r.score);
+  // Body signals alone can look fine after a short night. Today's ceiling is the lower of that and the
+  // sleep-adjusted figure (last night's sleep, sleep debt and body signals), the same one Today's energy uses.
+  const bodyLimit = limitFor(r.score);
+  const sleepLimit = sleep?.potential != null ? Math.round(sleep.potential * 100) : null;
+  const capped = sleepLimit != null && sleepLimit < bodyLimit;
+  const limit = capped ? sleepLimit : bodyLimit;
   const building = r.baselineDays < FULL_BASELINE;
   const rhrDiff = r.rhr - r.rhrAvg;
   return (
@@ -48,7 +54,7 @@ export function RecoveryCard({ a }) {
         </div>
       </div>
       <p className="rec-reason">{r.reason}</p>
-      <p className="rec-limit"><b>Today:</b> aim for no more than about <b>{limit}%</b> of a usual day’s activity.</p>
+      <p className="rec-limit"><b>Today:</b> aim for no more than about <b>{limit}%</b> of a usual day’s activity.{capped && <span className="muted small"> Your body signals say {bodyLimit}%, but last night’s sleep holds it down{sleep.napLift > 0 ? ' (your nap has already won some back)' : ''}.</span>}</p>
       {building && <p className="muted small">Your normal is still being learned ({r.baselineDays} of {FULL_BASELINE} days), so expect these numbers to move around this week.</p>}
       <HealthRow hc={hc} />
       <Glossary />
@@ -66,7 +72,7 @@ function Glossary() {
         <dt>Recovery</dt>
         <dd>This morning’s HRV and resting heart rate compared with your normal. 100% is a normal night. Below 100% means your body hasn’t fully recharged, often after a big day, poor sleep or illness.</dd>
         <dt>Activity limit</dt>
-        <dd>Follows recovery: at 80% recovered, aim for about 80% of a usual day. It’s a ceiling, not a target.</dd>
+        <dd>Follows recovery, held down further by a short night: at 80% recovered, aim for about 80% of a usual day. It’s a ceiling, not a target.</dd>
         <dt>Energy budget (EU)</dt>
         <dd>The same idea in more detail: physical activity plus stress, with last night’s sleep and the last two days’ load taken into account.</dd>
       </dl>
@@ -95,7 +101,7 @@ function HealthRow({ hc }) {
 }
 
 export function BalanceCard({ a }) {
-  const rows = balanceDays(a.days, 7);
+  const rows = balanceDays(a.days, 7, (i) => sleepPotentialAt(a, i));
   if (!rows.some((r) => r.recovery != null)) return null;
   const sum = balanceSummary(rows);
   const basis = rows.find((r) => r.basis)?.basis === 'steps' ? 'steps' : 'physical effort';
@@ -123,7 +129,7 @@ export function BalanceCard({ a }) {
         <span><i className="k-lim" />That day’s limit</span>
       </div>
       <p>{sum.text}</p>
-      <p className="muted small">Activity is your {basis} as a % of a usual day. Each day’s limit matches that morning’s recovery, so it drops after a poor night. Staying under the line is the aim. Today is so far.</p>
+      <p className="muted small">Activity is your {basis} as a % of a usual day. Each day’s limit matches that morning’s recovery and the night’s sleep, so it drops after a poor night. Staying under the line is the aim. Today is so far.</p>
     </section>
   );
 }

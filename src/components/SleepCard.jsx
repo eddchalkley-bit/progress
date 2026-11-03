@@ -119,7 +119,7 @@ function WeekChart({ s }) {
         {s.series.map((x, i) => {
           const cx = 8 + slot * i + slot / 2;
           const v = x.sleep;
-          const short = v != null && v + (x.nap || 0) < s.need - 15;
+          const short = v != null && v < s.need - 15;
           const last = i === n - 1;
           return (
             <g key={x.date} style={{ '--i': i }}>

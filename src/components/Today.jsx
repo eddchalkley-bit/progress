@@ -131,7 +131,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
 
       <NapCard s={sleep} energy={energy} />
 
-      <RecoveryCard a={a} />
+      <RecoveryCard a={a} sleep={sleep} />
       <BalanceCard a={a} />
 
       {plan.tips.length > 0 && (
