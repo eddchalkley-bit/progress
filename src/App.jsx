@@ -65,7 +65,7 @@ export default function App() {
   const nativeSync = useCallback(async ({ force = false } = {}) => {
     if (!isNative() || demo || !authed) return;
     const last = lastNativeSync();
-    if (!force && last && Date.now() - new Date(last.at) < 15 * 60e3) return;
+    if (!force && last && Date.now() - new Date(last.at) < 3 * 60e3) return;
     setSyncing(true); setSyncNote('');
     try {
       const r = await syncHealth(post, { days: last ? 4 : 90 });
