@@ -1,5 +1,5 @@
 import { sleepPotentialAt } from '../lib/sleep.js';
-import { recoveryFor, recoveryLabel, FULL_BASELINE, balanceDays, balanceSummary, healthCheck, limitFor } from '../lib/recovery.js';
+import { afterOverDays, recoveryFor, recoveryLabel, FULL_BASELINE, balanceDays, balanceSummary, healthCheck, limitFor } from '../lib/recovery.js';
 
 const signedPct = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v * 100))}%`;
 const signedNum = (v, unit) => `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v))} ${unit}`;
@@ -100,36 +100,69 @@ function HealthRow({ hc }) {
   );
 }
 
+const weekday = (date, style = 'short') => new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: style });
+
+// The week behind today: what you did each day against that day's limit, and how the day after went.
+// (Today's live numbers are in Today's energy; this morning's limit is in Recovery.)
 export function BalanceCard({ a }) {
   const rows = balanceDays(a.days, 7, (i) => sleepPotentialAt(a, i));
   if (!rows.some((r) => r.recovery != null)) return null;
   const sum = balanceSummary(rows);
+  const after = afterOverDays(a, rows).slice(-3);
   const basis = rows.find((r) => r.basis)?.basis === 'steps' ? 'steps' : 'physical effort';
+  const MAX = 150;
   return (
     <section className="card balance">
-      <div className="card-head"><h3>Recovery vs activity</h3><span className={`bal-verdict ${sum.tone}`}>{sum.verdict}</span></div>
-      <div className="bal-grid">
+      <div className="card-head"><h3>Your last 7 days</h3><span className={`bal-verdict ${sum.tone}`}>{sum.verdict}</span></div>
+      <p className="muted small bal-intro">Did you stay under your limit? Your limit is how much you can safely do that day, set by the morning’s recovery and the night’s sleep. 100 means a usual day.</p>
+
+      <div className="bal-rows">
         {rows.map((r, i) => {
-          const day = new Date(r.date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 2);
+          const did = r.exertion != null ? Math.round(r.exertion) : null;
+          const over = r.limit != null && did != null ? did - r.limit : null;
           return (
-            <div key={r.date} className="bal-col" style={{ '--i': i }}>
-              <span className={`bal-rec ${r.level || 'none'}`}>{r.recovery != null ? r.recovery : '–'}</span>
-              <div className="bal-track">
-                {r.exertion != null && <div className={`bal-fill ${r.over ? 'over' : ''} ${r.partial ? 'partial' : ''}`} style={{ height: `${Math.min(100, (r.exertion / 150) * 100)}%` }} />}
-                {r.limit != null && <div className="bal-limit" style={{ bottom: `${(r.limit / 150) * 100}%` }} />}
+            <div key={r.date} className="bal-row" style={{ '--i': i }}>
+              <span className="bal-day">{r.partial ? 'Today' : weekday(r.date)}</span>
+              <div className="bal-htrack">
+                {did != null && <div className={`bal-h-fill ${r.over ? 'over' : ''} ${r.partial ? 'partial' : ''}`} style={{ width: `${Math.min(100, (did / MAX) * 100)}%` }} />}
+                {r.limit != null && <div className="bal-hlimit" style={{ left: `${(r.limit / MAX) * 100}%` }} />}
               </div>
-              <span className="bal-day">{r.partial ? 'Today' : day}</span>
+              <span className="bal-val">
+                <b>{did != null ? `${did}%` : '–'}</b>
+                <small className={r.over ? 'over' : ''}>
+                  {r.limit == null ? 'no limit yet' : over > 0 ? `${r.over ? 'over' : 'just over'} by ${over}` : `limit ${r.limit}`}
+                </small>
+              </span>
             </div>
           );
         })}
       </div>
+
       <div className="bal-key muted small">
-        <span><i className="k-rec" />Recovery (100 = normal)</span>
-        <span><i className="k-bar" />Activity</span>
-        <span><i className="k-lim" />That day’s limit</span>
+        <span><i className="k-bar" />What you did</span>
+        <span><i className="k-lim" />Your limit</span>
+        <span><i className="k-over" />Over</span>
       </div>
+
       <p>{sum.text}</p>
-      <p className="muted small">Activity is your {basis} as a % of a usual day. Each day’s limit matches that morning’s recovery and the night’s sleep, so it drops after a poor night. Staying under the line is the aim. Today is so far.</p>
+
+      {after.length > 0 && (
+        <div className="bal-after">
+          <span className="bal-after-k">What followed the over days</span>
+          <ul>
+            {after.map((x) => (
+              <li key={x.date}>
+                <b>{weekday(x.date)}</b> (over by {x.by}) →{' '}
+                {x.delta == null ? `${weekday(x.nextDate)}: no check-in` : x.delta >= 0.3 ? `${weekday(x.nextDate)} symptoms ${x.delta.toFixed(1)} higher than usual` : x.delta <= -0.3 ? `${weekday(x.nextDate)} symptoms ${Math.abs(x.delta).toFixed(1)} lower than usual` : `${weekday(x.nextDate)} felt about as usual`}
+                {x.crash ? ', crash flagged' : ''}
+              </li>
+            ))}
+          </ul>
+          <p className="muted small">Crashes can lag by a day or two, so a good next day doesn’t mean it was free.</p>
+        </div>
+      )}
+
+      <p className="muted small">Bars are your {basis} as a % of a usual day; “just over” is within 10 points, which doesn’t count as over. Today’s limit and live budget are in the cards above. This one is the week behind them.</p>
     </section>
   );
 }

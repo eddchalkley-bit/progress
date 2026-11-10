@@ -90,7 +90,7 @@ export function balanceDays(days, n = 7, potentialAt = null) {
     const sleepLimit = pot != null ? Math.round(pot * 100) : null;
     const limit = bodyLimit == null ? null : sleepLimit != null ? Math.min(bodyLimit, sleepLimit) : bodyLimit;
     out.push({
-      date: days[i].date, recovery: r?.score ?? null, level: r?.level ?? null,
+      idx: i, date: days[i].date, recovery: r?.score ?? null, level: r?.level ?? null,
       exertion: e?.value ?? null, basis: e?.basis ?? null, limit,
       cappedBySleep: limit != null && bodyLimit != null && limit < bodyLimit,
       over: limit != null && e != null ? e.value > limit + 10 : null,
@@ -155,4 +155,21 @@ export function healthCheck(days) {
     : shown.some((r) => r.status === 'learning') ? 'Within your normal range so far — ranges firm up after a week of data.'
     : 'All within your normal range or better.';
   return { rows, summary };
+}
+
+// What followed the days you went over your limit: the next day's symptoms against your usual, and any crash
+// flagged in the next two days. Crashes can lag, so this looks one to two days ahead. Past days only.
+export function afterOverDays(a, rows) {
+  const out = [];
+  for (const r of rows) {
+    if (!r.over || r.partial) continue;
+    const nx = a.days[r.idx + 1];
+    if (!nx) continue;
+    const base = a.symBase[r.idx + 1];
+    const delta = nx.symptom != null && base != null ? nx.symptom - base : null;
+    const crash = Boolean(a.crashes.flags[r.idx + 1] || a.crashes.flags[r.idx + 2]);
+    if (delta == null && !crash) continue;
+    out.push({ date: r.date, nextDate: nx.date, delta, crash, by: Math.round(r.exertion - r.limit) });
+  }
+  return out;
 }
