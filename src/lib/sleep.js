@@ -155,7 +155,7 @@ export function analyseSleep(a) {
   else {
     const gap = n.sleep_min - need;
     if (score >= 85 && body !== 'strained')
-      coach.push(`Strong night. Today’s potential is up ${Math.round((potential - 1) * 100)}%. Bank it rather than spend it: staying inside your budget is what builds your baseline.`);
+      coach.push('Strong night, so you have your full budget today. Bank the extra rather than spend it: staying inside your budget is what builds your baseline.');
     else if (gap < -60)
       coach.push(`${fmtMinutes(-gap)} short of your need. Plan a 20–30 minute lie-down after lunch, eyes closed, even if you don’t sleep.`);
     if (body === 'strained') coach.push('Your body is still under strain overnight (HRV / resting HR off your normal). Treat today as a lighter day even if you feel fine.');

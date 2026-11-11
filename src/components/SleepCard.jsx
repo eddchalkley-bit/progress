@@ -35,6 +35,7 @@ export default function SleepCard({ s, energy }) {
   ].filter(Boolean);
 
   const pct = Math.round((s.potential - 1) * 100);
+  const lowerBy = energy?.ready && energy.stepsPerUnit && energy.sleepDelta < 0 ? Math.round((Math.abs(energy.sleepDelta) * energy.stepsPerUnit) / 100) * 100 : null;
 
   return (
     <section className="card sleep" aria-labelledby="sleep-h">
@@ -72,16 +73,18 @@ export default function SleepCard({ s, energy }) {
         </div>
       )}
 
-      <div className={`sl-impact ${pct > 0 ? 'up' : pct < 0 ? 'down' : ''}`}>
+      <div className={`sl-impact ${pct >= 3 ? 'up' : pct <= -3 ? 'down' : ''}`}>
         <div>
-          <span className="sl-impact-k">Today’s energy potential</span>
-          <span className="sl-impact-v">{pct > 0 ? '+' : pct < 0 ? '−' : '±'}{Math.abs(pct)}%{energy?.ready && energy.sleepDelta ? <small> ({energy.sleepDelta > 0 ? '+' : '−'}{Math.abs(energy.sleepDelta)} EU)</small> : null}</span>
+          <span className="sl-impact-k">What this means for today</span>
+          <span className="sl-impact-v">{pct >= 3 ? 'Full budget' : pct <= -3 ? 'Smaller budget' : 'Normal budget'}</span>
         </div>
-        <p>{energy?.ready && energy.factor < 1 && pct >= 0
-          ? 'Last night helped, but today’s status still calls for a lighter day — see Today’s energy.'
-          : pct > 0 ? 'Your budget stays at your normal. Banking the extra is how your baseline grows.'
-            : pct < 0 ? 'Today’s budget and crash line are lowered to match.'
-              : 'A normal night — today’s budget is your usual.'}</p>
+        <p>{pct <= -3
+          ? `A short or restless night, so today’s budget is lowered${lowerBy ? ` by about ${lowerBy} steps’ worth` : ''}${s.napLift > 0 ? ' (your nap has already won some back)' : ''}. Take it a bit easier.`
+          : energy?.ready && energy.factor < 1
+            ? 'Last night helped, but today’s status still calls for a lighter day. See Today’s energy.'
+            : pct >= 3
+              ? 'A good night. You get your full normal budget today. The extra isn’t extra to spend: it helps you recover.'
+              : 'A normal night, so today’s budget is your usual.'}</p>
       </div>
 
       <WeekChart s={s} />

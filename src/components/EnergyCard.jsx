@@ -4,10 +4,13 @@ const STATUS = {
   red: 'Crash-risk zone',
 };
 
-// Today's energy: used so far vs today's budget vs the predicted crash line.
-// e = energyBudget(...) — worked out once in Today so the sleep card can show the same numbers.
-export default function EnergyCard({ e, onLogCrash }) {
+const fmt = (n) => Math.round(n).toLocaleString('en-GB');
+const hhmm = (h) => `${String(h).padStart(2, '0')}:00`;
 
+// Today's energy in plain terms: what you have, what you've used, and a rough pace for the rest of the day.
+// e = energyBudget(...) — worked out once in Today so the sleep card shows the same numbers.
+// Units are turned into "steps' worth" using today's step budget, so this card and the Steps tile agree.
+export default function EnergyCard({ e, onLogCrash, now = new Date() }) {
   if (!e.ready) {
     return (
       <section className="card energy">
@@ -15,22 +18,37 @@ export default function EnergyCard({ e, onLogCrash }) {
         <p className="muted small">
           Your energy budget appears once Progress has about a week of Watch data
           {e.daysNeeded ? ` — roughly ${e.daysNeeded} more day${e.daysNeeded === 1 ? '' : 's'}` : ''}.
-          Used so far today: {Math.round(e.today.total)} EU.
+          Used so far today: {Math.round(e.today.total)} units.
         </p>
       </section>
     );
   }
 
+  const k = e.stepsPerUnit;                                    // steps' worth per energy unit, or null
+  const show = (units) => (k ? fmt(Math.round((units * k) / 100) * 100) : fmt(units));
+  const unitWord = k ? 'steps’ worth' : 'energy units';
+
+  const left = e.budget - e.used;
   const max = Math.max(e.crashLine, e.used, e.budget, 1) * 1.12;
   const pct = (v) => `${Math.min(100, (v / max) * 100)}%`;
-  const left = e.budget - e.used;
 
-  const sentence =
-    e.status === 'red'
-      ? `You’re past your predicted crash line. Rest for the remainder of the day where you can.`
-      : left >= 0
-        ? `About ${left} EU left in today’s budget, and ${e.crashLine - e.used} before the crash line.`
-        : `Over today’s budget — ${Math.max(0, e.crashLine - e.used)} EU before the crash line.`;
+  // Rough pace: an even spread from 07:00 to 21:00, the same rule as the Steps tile.
+  const h = now.getHours() + now.getMinutes() / 60;
+  const marks = [10, 12, 15, 18].filter((hr) => hr > h + 0.5).slice(0, 3)
+    .map((hr) => ({ hr, units: e.budget * ((hr - 7) / 14) }));
+  let paceLine = null;
+  if (e.byNow != null) {
+    const gap = e.byNow - e.used;
+    paceLine = e.status === 'red' ? 'You’re past your crash line. Rest for the rest of the day where you can.'
+      : e.used > e.budget ? 'You’re over today’s budget. Rest where you can.'
+      : gap > e.budget * 0.15 ? `Well under an even pace, so you have room. Spread it out rather than saving it all for later.`
+      : gap >= -e.budget * 0.1 ? 'Right on an even pace. Keep resting between things.'
+      : 'Ahead of an even pace. A rest now will help.';
+  }
+
+  const headline = e.status === 'red' ? 'Rest for the rest of the day'
+    : e.used > e.budget ? 'Over today’s budget'
+    : `${show(left)}`;
 
   return (
     <section className={`card energy energy-${e.status}`} aria-labelledby="energy-h">
@@ -39,13 +57,12 @@ export default function EnergyCard({ e, onLogCrash }) {
         <span className={`t-pill ${e.status === 'green' ? 'good' : e.status === 'amber' ? 'warn' : 'bad'}`}>{STATUS[e.status]}</span>
       </div>
 
-      <div className="en-stats">
-        <div><b>{e.used}</b><span>Used</span></div>
-        <div><b>{e.budget}</b><span>Budget</span></div>
-        <div className="en-crash"><b>{e.crashLine}</b><span>Crash line</span></div>
+      <div className="en-hero">
+        <div className="en-big">{headline}</div>
+        {e.status !== 'red' && e.used <= e.budget && <div className="en-cap">{unitWord} left in today’s budget</div>}
       </div>
 
-      <div className="en-track" role="img" aria-label={`Used ${e.used} of a ${e.budget} EU budget; crash line ${e.crashLine}`}>
+      <div className="en-track" role="img" aria-label={`Used ${show(e.used)} of a ${show(e.budget)} ${unitWord} budget; crash line ${show(e.crashLine)}`}>
         <div className="en-zone amber" style={{ left: pct(e.amberLine), width: `calc(${pct(e.crashLine)} - ${pct(e.amberLine)})` }} />
         <div className="en-zone red" style={{ left: pct(e.crashLine) }} />
         <div className="en-fill" style={{ width: pct(e.used) }}>
@@ -56,24 +73,33 @@ export default function EnergyCard({ e, onLogCrash }) {
         <div className="en-mark crash" style={{ left: pct(e.crashLine) }}><span>Crash</span></div>
       </div>
 
-      <p className="en-sentence">{sentence}</p>
-
-      <div className="en-legend">
-        <span><i className="sw-phys" />Physical {e.physical}</span>
-        <span><i className="sw-stress" />Stress {e.stress}</span>
-        {e.rest > 0 && <span><i className="sw-rest" />Nap rest −{e.rest}</span>}
-        {e.byNow != null && <span><i className="dot-now" />Even pace by now ~{e.byNow}</span>}
+      <div className="en-labels">
+        <div><b>{show(e.used)}</b><span>Used so far</span></div>
+        <div><b>{show(e.budget)}</b><span>Today’s budget</span></div>
+        <div className="en-crash"><b>{show(e.crashLine)}</b><span>Crash line</span></div>
       </div>
 
+      {(paceLine || marks.length > 0) && (
+        <div className="en-guide">
+          <span className="en-guide-k">A pace for the day</span>
+          {paceLine && <p>{paceLine}</p>}
+          {marks.length > 0 && (
+            <div className="en-chips" aria-label="Rough guide to how much to have used by each time">
+              {marks.map((m) => <span key={m.hr}><small>by {hhmm(m.hr)}</small><b>{show(m.units)}</b></span>)}
+            </div>
+          )}
+        </div>
+      )}
+
       <p className="muted small en-foot">
-        {e.carry > 0 && <>Budget is {e.carry} EU lower for load carried over from the last two days. </>}
-        {e.potential < 1 && e.factor >= e.potential && <>Lowered to {Math.round(e.potential * 100)}% of your normal after last night{e.napLift > 0 ? ` (your nap won back ${e.napLift}%)` : ''}. </>}
-        {e.factor < 1 && e.factor < e.potential && <>Set to {Math.round(e.factor * 100)}% of your normal because of today’s status. </>}
-        {e.potential > 1 && e.factor >= 1 && <>Last night lifted your potential to {e.potentialEU} EU, but the budget stays at your normal so you bank it. </>}
-        {e.potential > 1 && e.factor < 1 && <>Last night helped, but today’s status still calls for a lighter day. </>}
+        {k ? 'Steps’ worth is a guide: your budget also counts other movement, stress and mental effort. ' : ''}
+        {e.carry > 0 && <>Today’s budget is {show(e.carry)} lower because the last two days were busy. </>}
+        {e.potential < 1 && e.factor >= e.potential && <>It’s also lower after a short night{e.napLift > 0 ? ' (your nap won some back)' : ''}. </>}
+        {e.factor < 1 && e.factor < e.potential && <>It’s set lower because of today’s status. </>}
+        {e.rest > 0 && <>Your nap counts as rest, taking {show(e.rest)} off what you’ve used. </>}
         {e.learned
-          ? `Crash line learned from your last ${e.crashesLogged} crashes.`
-          : <>Crash line is an estimate until you’ve flagged {2 - e.crashesLogged} more crash{2 - e.crashesLogged === 1 ? '' : 'es'}. <button className="link-btn" onClick={onLogCrash}>Flag a crash</button></>}
+          ? `The crash line is learned from your last ${e.crashesLogged} crashes.`
+          : <>The crash line is an estimate until you’ve flagged {2 - e.crashesLogged} more crash{2 - e.crashesLogged === 1 ? '' : 'es'}. <button className="link-btn" onClick={onLogCrash}>Flag a crash</button></>}
       </p>
     </section>
   );

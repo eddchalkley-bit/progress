@@ -73,8 +73,8 @@ function Glossary() {
         <dd>This morning’s HRV and resting heart rate compared with your normal. 100% is a normal night. Below 100% means your body hasn’t fully recharged, often after a big day, poor sleep or illness.</dd>
         <dt>Activity limit</dt>
         <dd>Follows recovery, held down further by a short night: at 80% recovered, aim for about 80% of a usual day. It’s a ceiling, not a target.</dd>
-        <dt>Energy budget (EU)</dt>
-        <dd>The same idea in more detail: physical activity plus stress, with last night’s sleep and the last two days’ load taken into account.</dd>
+        <dt>Energy budget</dt>
+        <dd>What you can safely do today, shown as “steps’ worth”. It counts physical activity plus stress, and is lowered after a short night or two busy days. Naps count as rest.</dd>
       </dl>
     </details>
   );

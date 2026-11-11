@@ -69,7 +69,10 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
 
   const plan = dayPlan(a);
   const sleep = analyseSleep(a);
-  const energy = { ...energyBudget(a, plan.factor, plan.hourFrac, sleep.potential, undefined, sleep.nap.verdict), napLift: sleep.napLift };
+  const energyRaw = energyBudget(a, plan.factor, plan.hourFrac, sleep.potential, undefined, sleep.nap.verdict);
+  // Turn energy units into steps' worth using today's step budget, so the two budgets read the same.
+  const stepsPerUnit = energyRaw.ready && plan.budget && energyRaw.budget > 0 ? plan.budget / energyRaw.budget : null;
+  const energy = { ...energyRaw, napLift: sleep.napLift, stepsPerUnit };
   const notes = noticings(a);
   const planMax = plan.budget ? Math.max(plan.budget, plan.steps) * 1.1 : 1;
 

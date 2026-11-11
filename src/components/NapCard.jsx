@@ -5,14 +5,12 @@ export default function NapCard({ s, energy }) {
   const n = s.nap;
   const T = n.today;
   if (!T) return null;
-  const pct = Math.round(s.potential * 100);
-  const before = Math.round(s.potentialNight * 100);
   const lifted = s.napLift > 0;
   const shortfall = s.potentialNight < 1;
 
   let impact;
   if (lifted) {
-    impact = `Wins back part of last night’s shortfall: today’s potential goes from ${before}% to ${pct}% of your normal. It never rises above normal.`;
+    impact = 'Wins back part of last night’s shortfall, so today’s budget is a bit bigger than it would have been. It never goes above your normal.';
   } else if (shortfall && n.verdict === 'hurts') {
     impact = 'In your own data, naps haven’t helped the next day, so Progress isn’t counting this one towards today’s budget.';
   } else if (!shortfall) {
@@ -22,6 +20,9 @@ export default function NapCard({ s, energy }) {
   }
 
   const rest = energy?.ready ? energy.rest : 0;
+  const k = energy?.stepsPerUnit;
+  const liftTxt = k && energy?.ready && energy.normal ? `+${(Math.round((energy.normal * s.napLift / 100 * k) / 100) * 100).toLocaleString('en-GB')} steps’ worth` : null;
+  const restTxt = k ? `${(Math.round((rest * k) / 100) * 100).toLocaleString('en-GB')} steps’ worth` : `${rest} units`;
   const evidence = n.effects.filter((e) => ['sym', 'short', 'bed', 'length', 'time'].includes(e.key)).slice(0, 2);
 
   return (
@@ -40,8 +41,8 @@ export default function NapCard({ s, energy }) {
 
       <div className={`sl-impact ${lifted ? 'up' : ''}`}>
         <div>
-          <span className="sl-impact-k">Effect on today’s energy</span>
-          <span className="sl-impact-v">{lifted ? `+${s.napLift}%` : '±0%'}</span>
+          <span className="sl-impact-k">Makes up for last night</span>
+          <span className="sl-impact-v">{lifted ? (liftTxt || 'A little') : 'Nothing needed'}</span>
         </div>
         <p>{impact}</p>
       </div>
@@ -49,10 +50,10 @@ export default function NapCard({ s, energy }) {
       <div className={`sl-impact ${rest > 0 ? 'up' : ''}`}>
         <div>
           <span className="sl-impact-k">Counts as rest</span>
-          <span className="sl-impact-v">{rest > 0 ? `−${rest} EU` : '0 EU'}</span>
+          <span className="sl-impact-v">{rest > 0 ? `−${restTxt}` : 'None'}</span>
         </div>
         <p>{rest > 0
-          ? 'Taken off what you’ve used today, and carried into tomorrow like any other load. Rest lowers your load; it doesn’t raise your budget.'
+          ? 'Taken off what you’ve used today, and counted into tomorrow like any other load. Rest lowers what you’ve used; it doesn’t raise your budget.'
           : n.verdict === 'hurts' ? 'Not counted: in your own data, naps haven’t helped the next day.'
             : energy?.ready ? 'Too short to count as rest.' : 'Your energy budget appears once Progress has about a week of data.'}</p>
       </div>
