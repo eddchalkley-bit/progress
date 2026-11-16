@@ -45,6 +45,13 @@ export function dayLoad(d, k = ENERGY) {
   return { physical, stress, rest, total: physical + stress - rest, has };
 }
 
+// Steps' worth per energy unit: your learned safe steps vs a typical day's load. Uses your NORMAL day, not today's
+// budgets: today's energy budget shrinks with carried-over load while the step budget doesn't, so that ratio swings.
+export function stepsPerUnit(e, plan, k = ENERGY) {
+  if (!e?.ready || !(e.normal > 0) || !plan?.envReady || !plan.reference) return null;
+  return plan.reference / (e.normal / (1 + k.carry1 + k.carry2));
+}
+
 /**
  * a:      result of analyse()
  * factor: today's capacity multiplier (dayPlan's factor: green 1, amber 0.7, red 0.5, recovery lower)

@@ -10,7 +10,7 @@ const hhmm = (h) => `${String(h).padStart(2, '0')}:00`;
 // Today's energy in plain terms: what you have, what you've used, and a rough pace for the rest of the day.
 // e = energyBudget(...) — worked out once in Today so the sleep card shows the same numbers.
 // Units are turned into "steps' worth" using today's step budget, so this card and the Steps tile agree.
-export default function EnergyCard({ e, onLogCrash, now = new Date() }) {
+export default function EnergyCard({ e, onLogCrash, recovery, now = new Date() }) {
   if (!e.ready) {
     return (
       <section className="card energy">
@@ -19,6 +19,41 @@ export default function EnergyCard({ e, onLogCrash, now = new Date() }) {
           Your energy budget appears once Progress has about a week of Watch data
           {e.daysNeeded ? ` — roughly ${e.daysNeeded} more day${e.daysNeeded === 1 ? '' : 's'}` : ''}.
           Used so far today: {Math.round(e.today.total)} units.
+        </p>
+      </section>
+    );
+  }
+
+  // A rest day: carried-over load and/or a crash have used the budget up before you start. Showing
+  // "over budget" for a single unit would say you'd done too much; the honest message is "nothing to spend".
+  const restDay = e.budget <= Math.max(3, 0.1 * (e.normal || 0));
+  if (restDay) {
+    const phase = recovery?.active ? recovery.phases?.find((p) => p.id === recovery.phase)?.text : null;
+    return (
+      <section className="card energy energy-amber" aria-labelledby="energy-h">
+        <div className="card-head">
+          <h3 id="energy-h">Today’s energy</h3>
+          <span className="t-pill warn">Rest day</span>
+        </div>
+        <div className="en-hero">
+          <div className="en-big">Nothing to spend today</div>
+          <div className="en-cap">{e.crashLine <= e.used ? 'The last two days have already taken you to your crash line, so rest is the priority.' : e.used <= 5 ? 'You’ve barely used any, which is exactly right.' : `You’ve used ${e.used} so far. Aim to keep it as low as you can.`}</div>
+        </div>
+        <div className="en-labels">
+          <div><b>{e.used}</b><span>Used so far</span></div>
+          {e.crashLine > 0 && <div className="en-crash"><b>{e.crashLine}</b><span>Crash line</span></div>}
+        </div>
+        <div className="en-guide">
+          <span className="en-guide-k">Today</span>
+          <p>{phase || 'Keep to the essentials: short, seated tasks with a rest in between, and keep screens, conversation and decisions light.'}</p>
+        </div>
+        <p className="muted small en-foot">
+          {e.carry > 0 && <>The last two days were busy, which used up today’s budget before you started (about {e.carry} units carried over). </>}
+          {recovery?.active && <>You’re in a crash, so recovery comes first. </>}
+          {e.rest > 0 && <>Your nap counts as rest. </>}
+          {e.learned
+            ? `The crash line is learned from your last ${e.crashesLogged} crashes.`
+            : <>The crash line is an estimate until you’ve flagged {2 - e.crashesLogged} more crash{2 - e.crashesLogged === 1 ? '' : 'es'}. <button className="link-btn" onClick={onLogCrash}>Flag a crash</button></>}
         </p>
       </section>
     );

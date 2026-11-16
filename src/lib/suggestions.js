@@ -48,7 +48,8 @@ export function recoveryState(a) {
 }
 
 // ---------- day plan ----------
-export function dayPlan(a, now = new Date()) {
+// opts.budgetCap: steps. The energy budget (which counts carried-over load) can only lower today's step budget.
+export function dayPlan(a, now = new Date(), opts = {}) {
   const days = a.days, t = days.length - 1, today = days[t], yday = days[t - 1] || {};
   const env = a.envelope.steps;
   const rec = recoveryState(a);
@@ -57,7 +58,10 @@ export function dayPlan(a, now = new Date()) {
   let factor = { green: 1, amber: 0.7, red: 0.5, building: 0.9 }[level] ?? 0.9;
   if (rec.active) factor = { rest: 0.4, ease: 0.5, return: 0.75 }[rec.phase];
   // No step budget until the envelope is learned from your own data — a guessed budget can mislead.
-  const budget = env.ready && reference ? r100(reference * factor) : null;
+  let budget = env.ready && reference ? r100(reference * factor) : null;
+  const capped = budget != null && opts.budgetCap != null && opts.budgetCap < budget;
+  if (capped) budget = r100(Math.max(0, opts.budgetCap));
+  const restDay = capped && budget === 0;
 
   // Where you'd be by now if activity were spread evenly from 7am to 9pm.
   const h = now.getHours() + now.getMinutes() / 60;
@@ -128,7 +132,7 @@ export function dayPlan(a, now = new Date()) {
   const laptopOpen = lap ? sessionMinutes(lap, now.getTime()) : null;
   const screens = { phone: ts.phone, laptop: ts.laptop, total: ts.total, tracked: ts.tracked, budget: screenBudget, laptopOpen };
 
-  return { screens, budget, byNow, steps, pace, factor, reference, envReady: env.ready, restTarget, tips: tips.slice(0, 4), recovery: rec, hourFrac: frac };
+  return { screens, budget, byNow, steps, pace, factor, reference, envReady: env.ready, restTarget, tips: tips.slice(0, 4), recovery: rec, hourFrac: frac, restDay, cappedByEnergy: capped };
 }
 
 // ---------- things I've noticed ----------

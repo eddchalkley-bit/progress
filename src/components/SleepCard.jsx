@@ -73,18 +73,14 @@ export default function SleepCard({ s, energy }) {
         </div>
       )}
 
-      <div className={`sl-impact ${pct >= 3 ? 'up' : pct <= -3 ? 'down' : ''}`}>
+      <div className={`sl-impact ${pct <= -3 ? 'down' : pct >= 3 ? 'up' : ''}`}>
         <div>
-          <span className="sl-impact-k">What this means for today</span>
-          <span className="sl-impact-v">{pct >= 3 ? 'Full budget' : pct <= -3 ? 'Smaller budget' : 'Normal budget'}</span>
+          <span className="sl-impact-k">Effect on your budget</span>
+          <span className="sl-impact-v">{pct <= -3 ? (lowerBy ? `−${lowerBy.toLocaleString('en-GB')}` : 'Lowers it') : 'None'}</span>
         </div>
         <p>{pct <= -3
-          ? `A short or restless night, so today’s budget is lowered${lowerBy ? ` by about ${lowerBy} steps’ worth` : ''}${s.napLift > 0 ? ' (your nap has already won some back)' : ''}. Take it a bit easier.`
-          : energy?.ready && energy.factor < 1
-            ? 'Last night helped, but today’s status still calls for a lighter day. See Today’s energy.'
-            : pct >= 3
-              ? 'A good night. You get your full normal budget today. The extra isn’t extra to spend: it helps you recover.'
-              : 'A normal night, so today’s budget is your usual.'}</p>
+          ? `A short or restless night lowers today’s budget${lowerBy ? ` by about ${lowerBy.toLocaleString('en-GB')} steps’ worth` : ''}${s.napLift > 0 ? ' (your nap has already won some back)' : ''}. That’s on top of anything carried over from busy days.`
+          : 'Sleep isn’t holding you back today. Your budget is set by the last two days and today’s status: see Today’s energy.'}</p>
       </div>
 
       <WeekChart s={s} />

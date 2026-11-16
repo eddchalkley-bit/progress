@@ -12,7 +12,7 @@ import SleepCard from './SleepCard.jsx';
 import NapCard from './NapCard.jsx';
 import { analyseSleep } from '../lib/sleep.js';
 import { SYMPTOMS, symptomWord, symptomRatings } from '../lib/analysis.js';
-import { energyBudget } from '../lib/energy.js';
+import { energyBudget, stepsPerUnit } from '../lib/energy.js';
 
 const fmt = (v) => (v == null ? '–' : Math.round(v).toLocaleString('en-GB'));
 
@@ -67,12 +67,13 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
   const lastSync = data?.syncs?.[0]?.at;
 
 
-  const plan = dayPlan(a);
+  const plan0 = dayPlan(a);
   const sleep = analyseSleep(a);
-  const energyRaw = energyBudget(a, plan.factor, plan.hourFrac, sleep.potential, undefined, sleep.nap.verdict);
-  // Turn energy units into steps' worth using today's step budget, so the two budgets read the same.
-  const stepsPerUnit = energyRaw.ready && plan.budget && energyRaw.budget > 0 ? plan.budget / energyRaw.budget : null;
-  const energy = { ...energyRaw, napLift: sleep.napLift, stepsPerUnit };
+  const energyRaw = energyBudget(a, plan0.factor, plan0.hourFrac, sleep.potential, undefined, sleep.nap.verdict);
+  // One budget: the energy budget (which counts carried-over load, sleep and today's status) can lower the step budget.
+  const spu = stepsPerUnit(energyRaw, plan0);
+  const plan = spu && plan0.budget ? dayPlan(a, new Date(), { budgetCap: energyRaw.budget * spu }) : plan0;
+  const energy = { ...energyRaw, napLift: sleep.napLift, stepsPerUnit: spu };
   const notes = noticings(a);
   const planMax = plan.budget ? Math.max(plan.budget, plan.steps) * 1.1 : 1;
 
@@ -128,7 +129,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
 
       <Glance a={a} plan={plan} sleep={sleep} />
 
-      <EnergyCard e={energy} onLogCrash={() => onCheckIn(undefined, 'evening')} />
+      <EnergyCard e={energy} recovery={plan.recovery} onLogCrash={() => onCheckIn(undefined, 'evening')} />
 
       <SleepCard s={sleep} energy={energy} />
 
@@ -197,6 +198,8 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
                 </div>
                 {plan.pace && <p className={`pace ${plan.pace.tone}`}>{plan.pace.text}</p>}
               </>
+            ) : plan.restDay ? (
+              <p className="muted small">Rest day: no step budget today, because the last two days used it up. Keep steps to the essentials. Steps so far: {fmt(t.steps)}.</p>
             ) : (
               <p className="muted small">A step budget appears once Progress has learned your envelope — about two weeks of check-ins. Steps today: {fmt(t.steps)}.</p>
             )}
@@ -285,7 +288,10 @@ function Glance({ a, plan, sleep: sl }) {
 
   const steps = t.steps;
   let stepTone = '', stepNote = b.steps ? `Usually ~${fmtK(b.steps)}` : 'So far today';
-  if (plan.budget) {
+  if (plan.restDay) {
+    stepNote = 'Rest day · no budget';
+    stepTone = 'warn';
+  } else if (plan.budget) {
     stepNote = `of ~${fmtK(plan.budget)} budget`;
     stepTone = steps > plan.budget ? 'bad' : plan.pace?.tone === 'warn' ? 'warn' : 'ok';
   }
