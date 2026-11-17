@@ -3,16 +3,16 @@ import { targetSpecs, statusOf, describe } from '../lib/targets.js';
 import { fmtMinutes } from '../lib/time.js';
 import WhatWorked from './WhatWorked.jsx';
 import PageHeader from './PageHeader.jsx';
-import { dayPlan, noticings } from '../lib/suggestions.js';
+import { noticings } from '../lib/suggestions.js';
 import { SpikesCard } from './Spikes.jsx';
 import { fmtHM } from '../lib/screens.js';
 import { RecoveryCard, BalanceCard } from './Recovery.jsx';
 import EnergyCard from './EnergyCard.jsx';
 import SleepCard from './SleepCard.jsx';
 import NapCard from './NapCard.jsx';
-import { analyseSleep } from '../lib/sleep.js';
 import { SYMPTOMS, symptomWord, symptomRatings } from '../lib/analysis.js';
-import { energyBudget, stepsPerUnit } from '../lib/energy.js';
+import { todayModel, budgetHistory } from '../lib/dayLimits.js';
+import { BudgetWeekCard } from './BudgetHistory.jsx';
 
 const fmt = (v) => (v == null ? '–' : Math.round(v).toLocaleString('en-GB'));
 
@@ -67,13 +67,10 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
   const lastSync = data?.syncs?.[0]?.at;
 
 
-  const plan0 = dayPlan(a);
-  const sleep = analyseSleep(a);
-  const energyRaw = energyBudget(a, plan0.factor, plan0.hourFrac, sleep.potential, undefined, sleep.nap.verdict);
-  // One budget: the energy budget (which counts carried-over load, sleep and today's status) can lower the step budget.
-  const spu = stepsPerUnit(energyRaw, plan0);
-  const plan = spu && plan0.budget ? dayPlan(a, new Date(), { budgetCap: energyRaw.budget * spu }) : plan0;
-  const energy = { ...energyRaw, napLift: sleep.napLift, stepsPerUnit: spu };
+  // One budget for the whole app: see lib/dayLimits.js.
+  const m = todayModel(a);
+  const { plan, sleep, energy } = m;
+  const week = budgetHistory(a, m, 7);
   const notes = noticings(a);
   const planMax = plan.budget ? Math.max(plan.budget, plan.steps) * 1.1 : 1;
 
@@ -135,8 +132,8 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
 
       <NapCard s={sleep} energy={energy} />
 
-      <RecoveryCard a={a} sleep={sleep} />
-      <BalanceCard a={a} />
+      <RecoveryCard a={a} sleep={sleep} energy={energy} />
+      {week ? <BudgetWeekCard a={a} rows={week} reference={m.reference} /> : <BalanceCard a={a} />}
 
       {plan.tips.length > 0 && (
         <section className="card tip-card">
@@ -182,7 +179,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
           <section className="card plan">
             <div className="card-head">
               <h3>Today’s plan</h3>
-              {plan.budget && plan.factor < 1 && <span className="muted small">{Math.round(plan.factor * 100)}% of your envelope</span>}
+              {plan.budget && plan.factor < 1 && <span className="muted small">{Math.round(plan.factor * 100)}% of your usual budget</span>}
             </div>
             {plan.budget ? (
               <>
@@ -201,7 +198,7 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
             ) : plan.restDay ? (
               <p className="muted small">Rest day: no step budget today, because the last two days used it up. Keep steps to the essentials. Steps so far: {fmt(t.steps)}.</p>
             ) : (
-              <p className="muted small">A step budget appears once Progress has learned your envelope — about two weeks of check-ins. Steps today: {fmt(t.steps)}.</p>
+              <p className="muted small">A step budget appears once Progress has learned your safe step level — about two weeks of check-ins. Steps today: {fmt(t.steps)}.</p>
             )}
             {plan.screens.total != null && (
               <div className="plan-screens">

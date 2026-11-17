@@ -2,7 +2,8 @@ import PageHeader from './PageHeader.jsx';
 import { TargetLegend } from './Charts.jsx';
 import { SleepInsights } from './SleepCard.jsx';
 import { NapInsights } from './NapCard.jsx';
-import { analyseSleep } from '../lib/sleep.js';
+import { BudgetMonthCard } from './BudgetHistory.jsx';
+import { todayModel, budgetHistory } from '../lib/dayLimits.js';
 import { TargetCard } from './Today.jsx';
 import { targetSpecs } from '../lib/targets.js';
 import { progressBlocks } from '../lib/suggestions.js';
@@ -121,6 +122,8 @@ export default function Insights({ a, research, onReview, demo }) {
   const groups = ['Activity', 'Daily load', 'Recovery habits', 'Body signals'];
   const enough = a.coverage.checkinDays >= 14;
   const specs = targetSpecs(a);
+  const model = todayModel(a);
+  const month = budgetHistory(a, model, 30);
   const off = a.days.length - 30;
   const days30 = a.days.slice(-30).map((d, k) => ({ ...d, crash: a.crashes.flags[Math.max(0, off) + k] }));
 
@@ -139,7 +142,7 @@ export default function Insights({ a, research, onReview, demo }) {
           <div><span>Stable days</span><strong>{b.stablePct == null ? '–' : Math.round(b.stablePct * 100)}<small>%</small></strong></div>
           <div><span>Resting HR</span><strong>{fmt(b.rhr)}<small> bpm</small></strong></div>
           <div><span>HRV</span><strong>{fmt(b.hrv)}<small> ms</small></strong></div>
-          <div><span>Sleep (usual / need)</span><strong>{fmtMinutes(b.sleep)}<small> / {fmtMinutes(analyseSleep(a).need)}</small></strong></div>
+          <div><span>Sleep (usual / need)</span><strong>{fmtMinutes(b.sleep)}<small> / {fmtMinutes(model.sleep.need)}</small></strong></div>
           <div><span>Sustainable steps</span><strong>{b.sustainableSteps ? `~${fmt(b.sustainableSteps)}` : '–'}</strong></div>
         </div>
         <p className="muted small">Stable days are days without a crash where symptoms stayed within a point of your usual level. Watching this rise is the clearest sign of progress.</p>
@@ -151,9 +154,9 @@ export default function Insights({ a, research, onReview, demo }) {
         <TargetLegend crash />
       </div>
       {specs.symptom && <TargetCard spec={specs.symptom} days={days30} crash />}
-      {specs.steps && <TargetCard spec={specs.steps} days={days30.slice(0, -1)} title="Steps vs your envelope" crash />}
-      <SleepInsights s={analyseSleep(a)} />
-      <NapInsights s={analyseSleep(a)} />
+      {month ? <BudgetMonthCard a={a} rows={month} reference={model.reference} /> : specs.steps && <TargetCard spec={specs.steps} days={days30.slice(0, -1)} title="Steps vs your safe level" crash />}
+      <SleepInsights s={model.sleep} />
+      <NapInsights s={model.sleep} />
 
       <section className="card">
         <div className="card-head"><h3>What’s worked for you</h3></div>

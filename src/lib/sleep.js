@@ -189,11 +189,14 @@ export function scoreWord(s) {
   return s >= 85 ? 'Restorative' : s >= 70 ? 'Good' : s >= 50 ? 'Fair' : 'Poor';
 }
 
-// What today's analysis would have said on day i, using only data up to that day.
-// Used to give each past day its own sleep-adjusted limit.
-export function sleepPotentialAt(a, i) {
-  if (i >= a.days.length - 1) return analyseSleep(a).potential;
+// The analysis as it stood on day i (data up to and including that day only; no hindsight).
+export function viewAt(a, i) {
+  if (i >= a.days.length - 1) return a;
   const cut = i + 1;
-  const view = { ...a, days: a.days.slice(0, cut), symBase: a.symBase.slice(0, cut), crashes: { ...a.crashes, flags: a.crashes.flags.slice(0, cut) } };
-  return analyseSleep(view).potential;
+  return { ...a, days: a.days.slice(0, cut), symBase: a.symBase.slice(0, cut), crashes: { ...a.crashes, flags: a.crashes.flags.slice(0, cut) } };
+}
+
+// What today's analysis would have said on day i. Used to give each past day its own sleep-adjusted capacity.
+export function sleepPotentialAt(a, i) {
+  return analyseSleep(viewAt(a, i)).potential;
 }

@@ -26,8 +26,8 @@ export function recoveryState(a) {
       phase: settling ? 'ease' : 'rest',
       phases: [
         { id: 'rest', title: 'Rest', text: 'Rest as much as you can until symptoms start to fall. Keep screens, conversation and decisions to a minimum.' },
-        { id: 'ease', title: 'Ease in', text: 'As symptoms settle, keep to about half your envelope, in short bursts with rest between.' },
-        { id: 'return', title: 'Return gently', text: 'Once you’ve had two settled days, go back up to your envelope over two or three days — not all at once.' },
+        { id: 'ease', title: 'Ease in', text: 'As symptoms settle, keep to about half your budget, in short bursts with rest between.' },
+        { id: 'return', title: 'Return gently', text: 'Once you’ve had two settled days, go back up to your usual budget over two or three days — not all at once.' },
       ],
     };
   }
@@ -40,7 +40,7 @@ export function recoveryState(a) {
       return { active: true, day: t - startIdx + 1, typical, phase: 'return', justRecovered: true,
         phases: [
           { id: 'rest', title: 'Rest', text: '' }, { id: 'ease', title: 'Ease in', text: '' },
-          { id: 'return', title: 'Return gently', text: 'You’re back near your baseline. Build back to your envelope over two or three days — the urge to catch up is the most common trigger for the next crash.' },
+          { id: 'return', title: 'Return gently', text: 'You’re back near your baseline. Build back to your usual budget over two or three days — the urge to catch up is the most common trigger for the next crash.' },
         ] };
     }
   }
@@ -166,7 +166,7 @@ export function noticings(a) {
   if (days.length >= 50) {
     const c1 = startsIn(t - 29, t + 1), c0 = startsIn(t - 59, t - 29);
     if (c1 < c0) out.push({ tone: 'good', score: 3, title: 'Fewer crashes', text: `${c1} ${c1 === 1 ? 'crash' : 'crashes'} in the last 30 days, compared with ${c0} the month before.` });
-    else if (c1 > c0 && c1 >= 2) out.push({ tone: 'watch', score: 3, title: 'More crashes this month', text: `${c1} crashes in the last 30 days, compared with ${c0} before. Your envelope may need to come down for a while.` });
+    else if (c1 > c0 && c1 >= 2) out.push({ tone: 'watch', score: 3, title: 'More crashes this month', text: `${c1} crashes in the last 30 days, compared with ${c0} before. Your budget may need to come down for a while.` });
   }
 
   // Sleep against YOUR need (learned from the sleep before your good days)
@@ -207,12 +207,12 @@ export function noticings(a) {
         if (after.some((x) => x != null && x >= 1.5) || flags[i + 1] || flags[i + 2] || flags[i + 3]) dipped++;
       }
     }
-    if (over >= 3) out.push({ tone: 'watch', score: dipped >= 2 ? 5 : 3, title: 'Boom-and-bust pattern', text: `You went well over your envelope on ${over} days this month${dipped ? `, and ${dipped} of them were followed by a dip` : ''}. Spreading the same activity over more days is gentler.` });
+    if (over >= 3) out.push({ tone: 'watch', score: dipped >= 2 ? 5 : 3, title: 'Boom-and-bust pattern', text: `You went well over your budget on ${over} days this month${dipped ? `, and ${dipped} of them were followed by a dip` : ''}. Spreading the same activity over more days is gentler.` });
 
     // Streak inside the envelope (ending yesterday)
     let streak = 0;
     for (let i = t - 1; i >= 0; i--) { if (days[i].steps != null && days[i].steps <= env.safe && !flags[i]) streak++; else break; }
-    if (streak >= 5) out.push({ tone: 'good', score: 2, title: `${streak} days inside your envelope`, text: 'Steady pacing like this is what lets your baseline rise over time.' });
+    if (streak >= 5) out.push({ tone: 'good', score: 2, title: `${streak} days inside your budget`, text: 'Steady pacing like this is what lets your baseline rise over time.' });
   }
 
   // Weekday pattern

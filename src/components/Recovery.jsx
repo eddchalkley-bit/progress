@@ -6,7 +6,7 @@ const signedNum = (v, unit) => `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v))
 // Position on the 60–140% recovery scale
 const pos = (v) => `${Math.max(0, Math.min(100, ((v - 60) / 80) * 100))}%`;
 
-export function RecoveryCard({ a, sleep }) {
+export function RecoveryCard({ a, sleep, energy }) {
   const days = a.days;
   const r = recoveryFor(days, days.length - 1);
   const hc = healthCheck(days);
@@ -26,6 +26,7 @@ export function RecoveryCard({ a, sleep }) {
   const sleepLimit = sleep?.potential != null ? Math.round(sleep.potential * 100) : null;
   const capped = sleepLimit != null && sleepLimit < bodyLimit;
   const limit = capped ? sleepLimit : bodyLimit;
+  const budgetPct = energy?.ready && energy.usualDay > 0 ? Math.round((100 * energy.budget) / energy.usualDay) : null;
   const building = r.baselineDays < FULL_BASELINE;
   const rhrDiff = r.rhr - r.rhrAvg;
   return (
@@ -54,7 +55,11 @@ export function RecoveryCard({ a, sleep }) {
         </div>
       </div>
       <p className="rec-reason">{r.reason}</p>
-      <p className="rec-limit"><b>Today:</b> aim for no more than about <b>{limit}%</b> of a usual day’s activity.{capped && <span className="muted small"> Your body signals say {bodyLimit}%, but last night’s sleep holds it down{sleep.napLift > 0 ? ' (your nap has already won some back)' : ''}.</span>}</p>
+      {budgetPct != null ? (
+        <p className="rec-limit"><b>Today:</b> {budgetPct <= 5 ? 'a rest day, with nothing to spend.' : <>your budget is about <b>{budgetPct}%</b> of a usual day.</>}<span className="muted small"> Recovery is one input; the last two days and last night’s sleep count too. See Today’s energy.</span></p>
+      ) : (
+        <p className="rec-limit"><b>Today:</b> aim for no more than about <b>{limit}%</b> of a usual day’s activity.{capped && <span className="muted small"> Your body signals say {bodyLimit}%, but last night’s sleep holds it down.</span>}</p>
+      )}
       {building && <p className="muted small">Your normal is still being learned ({r.baselineDays} of {FULL_BASELINE} days), so expect these numbers to move around this week.</p>}
       <HealthRow hc={hc} />
       <Glossary />
@@ -71,10 +76,10 @@ function Glossary() {
         <dd>Your own average over the last 60 days, for each signal. Everything in Progress is compared with this, not with population averages. It takes about two weeks to settle.</dd>
         <dt>Recovery</dt>
         <dd>This morning’s HRV and resting heart rate compared with your normal. 100% is a normal night. Below 100% means your body hasn’t fully recharged, often after a big day, poor sleep or illness.</dd>
-        <dt>Activity limit</dt>
-        <dd>Follows recovery, held down further by a short night: at 80% recovered, aim for about 80% of a usual day. It’s a ceiling, not a target.</dd>
-        <dt>Energy budget</dt>
-        <dd>What you can safely do today, shown as “steps’ worth”. It counts physical activity plus stress, and is lowered after a short night or two busy days. Naps count as rest.</dd>
+        <dt>Today’s budget</dt>
+        <dd>What you can safely spend today, as a % of a usual day. Recovery is one input; the last two days’ load, last night’s sleep and today’s status count too. It’s a ceiling, not a target.</dd>
+        <dt>Steps’ worth</dt>
+        <dd>The unit for your budget: steps plus other movement, stress and mental effort, shown as the number of steps it equals. Naps count as rest.</dd>
       </dl>
     </details>
   );

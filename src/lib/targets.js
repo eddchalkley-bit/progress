@@ -49,9 +49,9 @@ export function targetSpecs(a) {
     floorZero: true, zeroBars: true,
     fmt: n0, diff: (d) => `${n0(d)} steps`,
     note: env.ready
-      ? `The line is your envelope (~${n0(stepTarget)} steps). Under it is safe; bars above it are days you overdid it.`
-      : `The line is your usual level (~${n0(stepTarget)} steps) until Progress has learned your envelope.`,
-    overWord: env.ready ? 'over your envelope' : 'above your usual', underWord: 'under',
+      ? `The line is your safe step level (~${n0(stepTarget)} steps). Under it is safe; bars above it are days you overdid it.`
+      : `The line is your usual level (~${n0(stepTarget)} steps) until Progress has learned your safe step level.`,
+    overWord: env.ready ? 'over your safe level' : 'above your usual', underWord: 'under',
   };
 
   return specs;

@@ -256,7 +256,7 @@ export default function Settings({ token, onToken, session, account, onSignOut, 
             <thead><tr><th>When</th><th>Trigger</th><th>Why</th></tr></thead>
             <tbody>
               <tr><td>Waking</td><td>Sleep → <b>Waking Up</b></td><td>Last night’s sleep, overnight HRV and resting HR set today’s status</td></tr>
-              <tr><td>13:00</td><td>Time of Day</td><td>Steps so far vs your envelope, while there’s time to pace</td></tr>
+              <tr><td>13:00</td><td>Time of Day</td><td>Steps so far vs your budget, while there’s time to pace</td></tr>
               <tr><td>21:00</td><td>Time of Day</td><td>Completes the day’s activity before you check in</td></tr>
             </tbody>
           </table>

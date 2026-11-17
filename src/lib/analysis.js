@@ -438,13 +438,13 @@ export function todayStatus(days, t, symBase, crashes, env, baseline, coverage) 
     }
     if (worst && worst.ratio > 1.3) {
       const when = worst.k === 1 ? 'Yesterday' : `${worst.k} days ago`;
-      add(2, 'alert', `${when} you did ${fmtInt(worst.s)} steps — ${Math.round((worst.ratio - 1) * 100)}% over your envelope. Crashes can lag 1–3 days.`);
+      add(2, 'alert', `${when} you did ${fmtInt(worst.s)} steps — ${Math.round((worst.ratio - 1) * 100)}% over your budget. Crashes can lag 1–3 days.`);
     } else if (worst && worst.ratio > 1.15) {
       const when = worst.k === 1 ? 'Yesterday' : `${worst.k} days ago`;
       add(1, 'warn', `${when} was a busier day (${fmtInt(worst.s)} steps)`);
     }
     const todaySteps = days[t]?.steps;
-    if (todaySteps != null && todaySteps > envSteps) add(1, 'warn', `You've already passed today's step envelope`);
+    if (todaySteps != null && todaySteps > envSteps) add(1, 'warn', `You've already passed today's step budget`);
   }
 
   const latestSym = days[t]?.symptom != null ? { v: days[t].symptom, i: t } : days[t - 1]?.symptom != null ? { v: days[t - 1].symptom, i: t - 1 } : null;
@@ -466,7 +466,7 @@ export function todayStatus(days, t, symBase, crashes, env, baseline, coverage) 
     level = 'amber'; title = 'Ease off today';
     advice = 'Plan a lighter day — roughly two-thirds of your usual activity, rest before you feel tired, and break up screen time.';
   } else {
-    level = 'green'; title = 'Within your envelope';
+    level = 'green'; title = 'Within your budget';
     advice = 'A steady day. Stay around your usual level and stop before you feel the need to.';
   }
   return { level, title, advice, reasons, points };
@@ -478,7 +478,7 @@ function statusToText(status, env, today) {
   for (const r of top) lines.push('• ' + r.text);
   if (env.steps.ready) {
     const so = today?.steps != null ? ` (${fmtInt(today.steps)} so far)` : '';
-    lines.push(`Envelope: ~${fmtInt(env.steps.safe)} steps${so}`);
+    lines.push(`Budget: ~${fmtInt(env.steps.safe)} steps${so}`);
   }
   return lines.join('\n');
 }

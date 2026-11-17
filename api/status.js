@@ -5,7 +5,7 @@ import { analyse } from '../src/lib/analysis.js';
 import { localDate } from '../src/lib/time.js';
 import { dayPlan } from '../src/lib/suggestions.js';
 import { analyseSleep } from '../src/lib/sleep.js';
-import { energyBudget, stepsPerUnit } from '../src/lib/energy.js';
+import { todayModel } from '../src/lib/dayLimits.js';
 import { recoveryFor } from '../src/lib/recovery.js';
 import { fmtClock } from '../src/lib/time.js';
 
@@ -16,11 +16,7 @@ export default async function handler(req, res) {
     const data = await loadAll(who, 120);
     const a = analyse(data, localDate(new Date(), TZ));
     if (req.query?.format === 'json') return res.status(200).json(a.status);
-    const plan0 = dayPlan(a);
-    const sleep = analyseSleep(a);
-    const energy = energyBudget(a, plan0.factor, plan0.hourFrac, sleep.potential, undefined, sleep.nap.verdict);
-    const spu = stepsPerUnit(energy, plan0);
-    const plan = spu && plan0.budget ? dayPlan(a, new Date(), { budgetCap: energy.budget * spu }) : plan0;
+    const { plan, sleep, energy, spu } = todayModel(a);
     const r100 = (n) => (Math.round(n / 100) * 100).toLocaleString('en-GB');
     const rec = recoveryFor(a.days, a.days.length - 1);
     const extra = [];
@@ -31,7 +27,7 @@ export default async function handler(req, res) {
     if (sleep.targetBed != null) extra.push(`Bed by ${fmtClock(sleep.targetBed)} tonight`);
     if (plan.tips[0]) extra.push(plan.tips[0].text);
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.status(200).send([a.statusText.split('\nEnvelope:')[0], ...extra].join('\n'));
+    res.status(200).send([a.statusText.split('\nBudget:')[0], ...extra].join('\n'));
   } catch (err) {
     fail(res, err);
   }
