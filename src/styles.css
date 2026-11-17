@@ -1,92 +1,58 @@
 /* =====================================================================
-   Progress design system v2 — "Coastal dusk"
-   One paper-flat surface, one deep spruce hero, one teal data hue and one
-   violet for mental load. Status colours (good / near / over) are reserved
-   for state and always travel with a word. Chart colours were checked with
-   the data-viz validator in light and dark.
+   Progress design system v3 — "Clear sky"
+   Fresh blue on white. Blue = within budget / physical effort, pink = mental
+   and social load. Status colours (good / near / over) are reserved for state
+   and always travel with a word. Chart colours checked with the data-viz
+   validator in light and dark.
    ===================================================================== */
 :root {
-  /* surfaces + ink */
-  --bg: #EEF2F1;
-  --bg-wash: #EEF2F1;
-  --surface: #FFFFFF;
-  --raised: #F6F9F8;
-  --ink: #11292B;
-  --muted: #546B6E;
-  --line: #DAE4E2;
-  --soft: #E8EFEE;
-  /* brand */
-  --accent: #0B6B66;         /* buttons, links, active states */
-  --accent-2: #08908A;       /* data: physical effort / within budget */
-  --accent-ink: #FFFFFF;
-  --violet: #6A55C9;         /* data: mental and social load */
-  --violet-bg: #ECE9FA;
-  --lilac: #6A55C9;
-  --sun: #E8A92B;            /* the limit line */
-  --sun-bg: #FAF0D6;
-  /* status (reserved) */
-  --green: #1D774C;
-  --green-bg: #DFF1E7;
-  --amber: #9A6A00;
-  --amber-bg: #FAEFD3;
-  --red: #BE2F3F;
-  --red-bg: #FBE4E6;
-  /* chart neutrals */
-  --blue-bg: #E0F0EE;
-  --bar: #CFDEDC;
-  --band: #DCEEEB;
-  --on: #86C9C1;
-  /* hero */
-  --hero: #0F3B3A;
-  --hero-amber: #4B3606;
-  --hero-red: #4F1B25;
-  --hero-build: #20404B;
-  --hero-ink: #EAF6F4;
-  --hero-muted: rgba(234, 246, 244, 0.74);
-  --hero-line: rgba(234, 246, 244, 0.16);
-  /* shape + motion */
-  --radius: 20px;
-  --radius-sm: 14px;
-  --track: 10px;
-  --track-lg: 14px;
-  --tab-bg: rgba(255, 255, 255, 0.9);
-  --shadow: 0 1px 2px rgba(17, 41, 43, 0.05), 0 6px 18px rgba(17, 41, 43, 0.04);
-  --shadow-lift: 0 6px 16px rgba(11, 107, 102, 0.24);
+  --bg: #F2F6FC; --bg-wash: #F2F6FC; --surface: #FFFFFF; --raised: #F7FAFE;
+  --ink: #0F1E3D; --muted: #55668A; --line: #DCE5F3; --soft: #E8EFFA;
+  --accent: #2563EB; --accent-2: #2563EB; --accent-ink: #FFFFFF;
+  --violet: #D6409F; --violet-bg: #FBE6F3; --lilac: #D6409F;
+  --sun: #F5A524; --sun-bg: #FFF1D6;
+  --green: #12804F; --green-bg: #DDF4E8;
+  --amber: #C25A00; --amber-bg: #FFEBCB;
+  --red: #C42F42; --red-bg: #FDE4E7;
+  --blue-bg: #E3EDFD; --bar: #CBD9F2; --band: #DCE8FC; --on: #8FB4F7;
+  --hero: #1D4ED8; --hero-amber: #FFB629; --hero-red: #E0384B; --hero-recovery: #4338CA; --hero-build: #4A6491;
+  --hero-ink: #FFFFFF; --hero-muted: rgba(255,255,255,0.82); --hero-line: rgba(255,255,255,0.28);
+  --radius: 20px; --radius-sm: 14px; --track: 10px; --track-lg: 14px;
+  --tab-bg: rgba(255,255,255,0.92);
+  --shadow: 0 1px 2px rgba(15,30,61,0.05), 0 6px 18px rgba(15,30,61,0.05);
+  --shadow-lift: 0 6px 16px rgba(37,99,235,0.28);
   --display: "Bricolage Grotesque", "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #101A19; --bg-wash: #101A19; --surface: #17211F; --raised: #1C2826;
-    --ink: #E6F1EF; --muted: #93ADAA; --line: #263634; --soft: #1F2D2B;
-    --accent: #4CC3B7; --accent-2: #2BA396; --accent-ink: #07201E;
-    --violet: #8F80EB; --violet-bg: #25214A; --lilac: #8F80EB;
-    --sun: #E0B04E; --sun-bg: #33290F;
-    --green: #6FD3A0; --green-bg: #153326; --amber: #D9A93E; --amber-bg: #33290F; --red: #EC7A8A; --red-bg: #3C1D25;
-    --blue-bg: #172F2D; --bar: #2A3C3A; --band: #1B3331; --on: #2F6F69;
-    --hero: #12403D; --hero-amber: #3E2E0B; --hero-red: #43202A; --hero-build: #1D3340;
-    --tab-bg: rgba(23, 33, 31, 0.9);
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-lift: 0 6px 16px rgba(0, 0, 0, 0.4);
+    --bg: #0B1220; --bg-wash: #0B1220; --surface: #131C30; --raised: #18233B;
+    --ink: #E8EEFB; --muted: #94A5C6; --line: #243252; --soft: #1B2842;
+    --accent: #6EA6FF; --accent-2: #4A8CF2; --accent-ink: #08142E;
+    --violet: #D8559F; --violet-bg: #3A1D33; --lilac: #D8559F;
+    --sun: #F5B64A; --sun-bg: #3A2D12;
+    --green: #5FD39A; --green-bg: #123325; --amber: #F2A33A; --amber-bg: #3A2A0E; --red: #FF8A9B; --red-bg: #42202A;
+    --blue-bg: #172648; --bar: #2A3B60; --band: #1A2C52; --on: #355C9E;
+    --hero: #1E40AF; --hero-amber: #FFB629; --hero-red: #D6404F; --hero-recovery: #4338CA; --hero-build: #34507D;
+    --tab-bg: rgba(19,28,48,0.92);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3); --shadow-lift: 0 6px 16px rgba(0,0,0,0.4);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #101A19; --bg-wash: #101A19; --surface: #17211F; --raised: #1C2826;
-  --ink: #E6F1EF; --muted: #93ADAA; --line: #263634; --soft: #1F2D2B;
-  --accent: #4CC3B7; --accent-2: #2BA396; --accent-ink: #07201E;
-  --violet: #8F80EB; --violet-bg: #25214A; --lilac: #8F80EB;
-  --sun: #E0B04E; --sun-bg: #33290F;
-  --green: #6FD3A0; --green-bg: #153326; --amber: #D9A93E; --amber-bg: #33290F; --red: #EC7A8A; --red-bg: #3C1D25;
-  --blue-bg: #172F2D; --bar: #2A3C3A; --band: #1B3331; --on: #2F6F69;
-  --hero: #12403D; --hero-amber: #3E2E0B; --hero-red: #43202A; --hero-build: #1D3340;
-  --tab-bg: rgba(23, 33, 31, 0.9);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-lift: 0 6px 16px rgba(0, 0, 0, 0.4);
+  --bg: #0B1220; --bg-wash: #0B1220; --surface: #131C30; --raised: #18233B;
+  --ink: #E8EEFB; --muted: #94A5C6; --line: #243252; --soft: #1B2842;
+  --accent: #6EA6FF; --accent-2: #4A8CF2; --accent-ink: #08142E;
+  --violet: #D8559F; --violet-bg: #3A1D33; --lilac: #D8559F;
+  --sun: #F5B64A; --sun-bg: #3A2D12;
+  --green: #5FD39A; --green-bg: #123325; --amber: #F2A33A; --amber-bg: #3A2A0E; --red: #FF8A9B; --red-bg: #42202A;
+  --blue-bg: #172648; --bar: #2A3B60; --band: #1A2C52; --on: #355C9E;
+  --hero: #1E40AF; --hero-amber: #FFB629; --hero-red: #D6404F; --hero-recovery: #4338CA; --hero-build: #34507D;
+  --tab-bg: rgba(19,28,48,0.92);
+  --shadow: 0 1px 2px rgba(0,0,0,0.3); --shadow-lift: 0 6px 16px rgba(0,0,0,0.4);
   color-scheme: dark;
 }
-
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -136,13 +102,6 @@ h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: 
 .status-kicker { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; }
 .status h2 { font-size: 26px; font-weight: 700; margin: 4px 0 6px; }
 .status p { margin: 0; font-size: 15px; }
-.status-green { background: var(--green-bg); color: var(--ink); }
-.status-green .status-kicker, .status-green h2 { color: var(--green); }
-.status-amber { background: var(--amber-bg); }
-.status-amber .status-kicker, .status-amber h2 { color: var(--amber); }
-.status-red { background: var(--red-bg); }
-.status-red .status-kicker, .status-red h2 { color: var(--red); }
-.status-building { background: var(--blue-bg); }
 .reasons { list-style: none; margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid rgba(127, 127, 127, 0.18); display: grid; gap: 7px; font-size: 14px; }
 .reasons li { display: flex; gap: 9px; align-items: baseline; }
 .reasons li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; transform: translateY(-1px); background: var(--green); }
@@ -364,8 +323,6 @@ textarea { width: 100%; border: 1px solid var(--line); background: var(--bg); bo
 .sw.crash { background: var(--red); border-radius: 50%; width: 7px; height: 7px; }
 
 /* Plan, recovery, noticings, progress */
-.status-recovery { background: linear-gradient(155deg, var(--blue-bg), var(--surface) 120%); }
-.status-recovery .status-kicker, .status-recovery h2 { color: var(--accent); }
 .phases { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; counter-reset: ph; }
 .phases li { counter-increment: ph; display: grid; grid-template-columns: 26px 1fr; gap: 2px 10px; align-items: baseline; color: var(--muted); font-size: 14.5px; }
 .phases li::before { content: counter(ph); grid-row: span 2; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--soft); font-size: 12px; font-weight: 700; }
@@ -759,27 +716,21 @@ h1, h2, .big, .tcard-value, .kv-grid strong, .signal-value, .stepper-val, .g-val
 .demo-banner b { color: var(--accent); }
 .flag-banner { border-radius: var(--radius-sm); }
 
-/* Hero: the one bold element */
+/* Hero: the one bold element. Blue = fine, bright yellow = near the limit, red = over, indigo = recovering. */
 .status { position: relative; overflow: hidden; border: 0; border-radius: 24px; padding: 22px; box-shadow: none; background: var(--hero); color: var(--hero-ink); }
-.status-amber { background: var(--hero-amber); }
-.status-red, .status-recovery { background: var(--hero-red); }
+.status-amber { background: var(--hero-amber); --hero-ink: #14213D; --hero-muted: rgba(20,33,61,0.82); --hero-line: rgba(20,33,61,0.2); }
+.status-red { background: var(--hero-red); }
+.status-recovery { background: var(--hero-recovery); }
 .status-building { background: var(--hero-build); }
 .status h2 { font-size: 30px; line-height: 1.08; margin: 6px 0 8px; color: var(--hero-ink); }
 .status p { color: var(--hero-muted); font-size: 15px; line-height: 1.45; }
-.status-kicker { font-size: 13.5px; font-weight: 600; letter-spacing: 0; text-transform: none; opacity: 1; display: inline-flex; align-items: center; gap: 8px; color: #7FE0CF; }
+.status-kicker { font-size: 13.5px; font-weight: 600; letter-spacing: 0; text-transform: none; opacity: 1; display: inline-flex; align-items: center; gap: 8px; color: var(--hero-ink); }
 .status-kicker::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-.status-green .status-kicker, .status-green h2 { color: var(--hero-ink); }
-.status-green .status-kicker { color: #7FE0CF; }
-.status-amber .status-kicker { color: #F2C75C; }
-.status-amber h2, .status-red h2, .status-recovery h2, .status-building h2 { color: var(--hero-ink); }
-.status-red .status-kicker, .status-recovery .status-kicker { color: #FF9FAD; }
-.status-building .status-kicker { color: #A9D3E6; }
-.status::after { content: ''; position: absolute; right: 22px; top: 0; width: 34px; height: 4px; border-radius: 0 0 3px 3px; background: var(--sun); }
-.reasons { border-top-color: var(--hero-line); }
+.status .reasons { border-top-color: var(--hero-line); }
 .phases li { color: var(--hero-muted); }
 .phases li.now { color: var(--hero-ink); }
-.phases li::before { background: rgba(255, 255, 255, 0.14); color: var(--hero-ink); }
-.phases li.now::before { background: var(--hero-ink); color: var(--hero); }
+.phases li::before { background: rgba(255,255,255,0.2); color: var(--hero-ink); }
+.phases li.now::before { background: var(--hero-ink); color: var(--hero-recovery); }
 
 /* Buttons + controls */
 .primary, .checkin-cta { background: var(--accent); color: var(--accent-ink); border-radius: 16px; box-shadow: var(--shadow-lift); transition: transform 0.15s; }
@@ -825,7 +776,7 @@ input[type=range]::-moz-range-thumb { border: 0; box-shadow: 0 1px 6px rgba(17, 
 .n-icon { border-radius: 9px; }
 
 /* ---------- Charts: one grammar ----------
-   Track = --soft. Within budget = teal (--accent-2), mental load = violet,
+   Track = --soft. Within budget = blue (--accent-2), mental load = pink,
    near = amber, over = red. The limit is always a short ink tick; a crash
    is always a red dot; "now" is always an ink dot with a surface ring.   */
 .env-bar, .rec-bar, .sl-meter, .dc-bar, .trig-bar, .ps-bar, .progress-line { height: var(--track); border-radius: 999px; background: var(--soft); }
@@ -975,3 +926,43 @@ h4, .sl-label, .en-guide-k, .bal-after-k { font-size: 13.5px; font-weight: 600; 
 .sl-impact > div { align-items: center; }
 .sl-impact-v { font-size: 20px; text-align: right; white-space: nowrap; }
 .rec-def { margin: 0 0 14px; }
+
+/* Hero details */
+.status .reasons li::before { background: var(--hero-ink); }
+.status .reasons li.warn::before, .status .reasons li.alert::before { background: var(--hero-ink); box-shadow: 0 0 0 3px rgba(255,255,255,0.25); }
+.status-amber .reasons li::before { background: #14213D; }
+
+/* Hero meter */
+.hm { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--hero-line); }
+.hm-big { font-family: var(--display); font-size: 46px; font-weight: 650; line-height: 1; letter-spacing: -0.02em; color: var(--hero-ink); }
+.hm-cap { margin-top: 4px; font-size: 14.5px; color: var(--hero-muted); }
+.hm-track { position: relative; height: 12px; border-radius: 999px; background: rgba(255,255,255,0.25); margin: 16px 0 8px; }
+.status-amber .hm-track { background: rgba(20,33,61,0.16); }
+.hm-fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--hero-ink); }
+.hm-tick { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--sun); box-shadow: 0 0 0 2px var(--hero); }
+.status-amber .hm-tick { background: #14213D; box-shadow: 0 0 0 2px var(--hero-amber); }
+.status-red .hm-tick { box-shadow: 0 0 0 2px var(--hero-red); }
+.status-recovery .hm-tick { box-shadow: 0 0 0 2px var(--hero-recovery); }
+.status-building .hm-tick { box-shadow: 0 0 0 2px var(--hero-build); }
+.hm-legend { display: flex; justify-content: space-between; font-size: 13px; color: var(--hero-muted); }
+.status::after { display: none; }
+
+/* Trends */
+.segmented.three { grid-template-columns: repeat(3, 1fr); }
+.trends { display: grid; gap: 14px; }
+.tr-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; }
+.tr-tile { display: grid; gap: 2px; align-content: start; }
+.tr-tile > span { font-size: 13.5px; color: var(--muted); font-weight: 600; }
+.tr-tile strong { font-family: var(--display); font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.tr-delta { font-size: 13px; color: var(--muted); }
+.tr-delta.good { color: var(--green); font-weight: 600; }
+.tr-delta.bad { color: var(--amber); font-weight: 600; }
+.tr-foot { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); }
+.tr-strip svg { width: 100%; height: auto; display: block; }
+.tr-last { font-size: 14px; font-weight: 600; color: var(--muted); }
+.tr-crash { fill: var(--red); opacity: 0.12; }
+.tr-base { stroke: var(--line); stroke-width: 1; }
+.tr-target { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 0; opacity: 0.7; }
+.tr-bar.on { fill: var(--accent-2); }
+.tr-bar.warn { fill: var(--sun); }
+.tr-note { margin: 8px 0 0; }

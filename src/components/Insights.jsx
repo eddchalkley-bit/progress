@@ -1,4 +1,5 @@
 import PageHeader from './PageHeader.jsx';
+import Trends from './Trends.jsx';
 import { TargetLegend } from './Charts.jsx';
 import { SleepInsights } from './SleepCard.jsx';
 import { NapInsights } from './NapCard.jsx';
@@ -130,6 +131,8 @@ export default function Insights({ a, research, onReview, demo }) {
   return (
     <div className="screen">
       <PageHeader eyebrow={`${a.coverage.days} days tracked · ${a.coverage.checkinDays} check-ins`} title="Insights" />
+
+      <Trends a={a} />
 
       <ProgressOverTime a={a} />
 

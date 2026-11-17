@@ -55,6 +55,43 @@ export function TargetCard({ spec, days, title, crash = false }) {
   );
 }
 
+
+// The one answer: how much is left today, in steps' worth, drawn inside the status card.
+function HeroMeter({ e, recovery }) {
+  if (!e?.ready) return null;
+  const k = e.stepsPerUnit;
+  const show = (u) => (k ? fmt(Math.round((u * k) / 100) * 100) : fmt(u));
+  const word = k ? 'steps’ worth' : 'energy units';
+  const restDay = e.budget <= Math.max(3, 0.1 * (e.normal || 0));
+  if (restDay || recovery?.active) {
+    return (
+      <div className="hm">
+        <div className="hm-big">Rest day</div>
+        <div className="hm-cap">Nothing to spend today. Used so far: {show(e.used)} {word}.</div>
+      </div>
+    );
+  }
+  const left = e.budget - e.used;
+  const max = Math.max(e.crashLine, e.used, e.budget, 1) * 1.05;
+  const pct = (v) => `${Math.min(100, (v / max) * 100)}%`;
+  const over = e.used > e.budget;
+  return (
+    <div className="hm">
+      <div className="hm-row">
+        <div>
+          <div className="hm-big">{over ? 'Over budget' : show(left)}</div>
+          <div className="hm-cap">{over ? `Used ${show(e.used)} of ${show(e.budget)} ${word}` : `${word} left today`}</div>
+        </div>
+      </div>
+      <div className="hm-track" role="img" aria-label={`Used ${show(e.used)} of ${show(e.budget)} ${word}`}>
+        <div className="hm-fill" style={{ width: pct(e.used) }} />
+        <div className="hm-tick" style={{ left: pct(e.budget) }} />
+      </div>
+      <div className="hm-legend"><span>Used {show(e.used)}</span><span>Budget {show(e.budget)}</span></div>
+    </div>
+  );
+}
+
 export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, onSync }) {
   const days = a.days;
   const t = days[days.length - 1];
@@ -113,34 +150,18 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
               </li>
             ))}
           </ol>
+          <HeroMeter e={energy} recovery={plan.recovery} />
         </section>
       ) : (
         <section className={`status status-${s.level}`}>
           <div className="status-kicker">{s.level === 'building' ? 'Getting started' : 'Today'}</div>
           <h2>{s.title}</h2>
           <p>{s.advice}</p>
+          <HeroMeter e={energy} recovery={plan.recovery} />
         </section>
       )}
 
       {a.redFlag && <div className="flag-banner">{a.redFlag}</div>}
-
-      <Glance a={a} plan={plan} sleep={sleep} />
-
-      <EnergyCard e={energy} recovery={plan.recovery} onLogCrash={() => onCheckIn(undefined, 'evening')} />
-
-      <SleepCard s={sleep} energy={energy} />
-
-      <NapCard s={sleep} energy={energy} />
-
-      <RecoveryCard a={a} sleep={sleep} energy={energy} />
-      {week ? <BudgetWeekCard a={a} rows={week} reference={m.reference} /> : <BalanceCard a={a} />}
-
-      {plan.tips.length > 0 && (
-        <section className="card tip-card">
-          <div className="card-head"><h3>Today</h3><span className="muted small">Rest breaks: {plan.restTarget}</span></div>
-          <ul className="tips">{plan.tips.slice(0, 3).map((tip) => <li key={tip.id}>{tip.text}</li>)}</ul>
-        </section>
-      )}
 
       <button className={`checkin-cta ${cta.done || cta.later ? 'done' : ''}`} onClick={() => onCheckIn(undefined, cta.mode)}>
         <div>
@@ -149,6 +170,30 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
         </div>
         <span className="chev">›</span>
       </button>
+      {plan.tips.length > 0 && (
+        <section className="card tip-card">
+          <div className="card-head"><h3>Today</h3><span className="muted small">Rest breaks: {plan.restTarget}</span></div>
+          <ul className="tips">{plan.tips.slice(0, 3).map((tip) => <li key={tip.id}>{tip.text}</li>)}</ul>
+        </section>
+      )}
+
+      <Glance a={a} plan={plan} sleep={sleep} />
+
+      <EnergyCard e={energy} recovery={plan.recovery} onLogCrash={() => onCheckIn(undefined, 'evening')} />
+
+      <details className="more">
+        <summary>
+          <span>Sleep, recovery and your last 7 days</span>
+          <span className="muted small">what is behind today’s budget</span>
+        </summary>
+        <div className="more-body">
+          <SleepCard s={sleep} energy={energy} />
+          <NapCard s={sleep} energy={energy} />
+          <RecoveryCard a={a} sleep={sleep} energy={energy} />
+          {week ? <BudgetWeekCard a={a} rows={week} reference={m.reference} /> : <BalanceCard a={a} />}
+        </div>
+      </details>
+
       {(hasAm || hasPm) && <DayCompare t={t} y={y} />}
       {!y?.checkin && days.length > 1 && (
         <button className="link-btn" onClick={() => onCheckIn(y.date)}>Missed yesterday? Add yesterday’s check-in</button>
