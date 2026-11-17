@@ -3,12 +3,12 @@
 import { addDays, dateRange, daysBetween, fmtMinutes, fmtClock } from './time.js';
 import { screenHours } from './screens.js';
 
+// Three ratings, 0 (none) to 10 (worst). Body fatigue includes aches and pains.
+// (Older check-ins also hold breathlessness, aches and palpitations/dizziness; those are kept but no longer scored.)
 export const SYMPTOMS = [
-  { key: 'fatigue', label: 'Fatigue' },
-  { key: 'brain_fog', label: 'Brain fog' },
-  { key: 'breath', label: 'Breathlessness' },
-  { key: 'aches', label: 'Aches & pain' },
-  { key: 'heart', label: 'Palpitations / dizziness' },
+  { key: 'fatigue', label: 'Body fatigue', hint: 'Heavy, weak or drained, including aches and pains' },
+  { key: 'mental_fatigue', label: 'Mental fatigue', hint: 'Worn out by thinking, reading, planning or talking' },
+  { key: 'brain_fog', label: 'Brain fog', hint: 'Slow, fuzzy, or struggling to find words' },
 ];
 
 const BASELINE_WINDOW = 28;

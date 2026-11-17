@@ -966,3 +966,18 @@ h4, .sl-label, .en-guide-k, .bal-after-k { font-size: 13.5px; font-weight: 600; 
 .tr-bar.on { fill: var(--accent-2); }
 .tr-bar.warn { fill: var(--sun); }
 .tr-note { margin: 8px 0 0; }
+
+/* Check-in */
+.log-intro { margin: 0 0 6px; }
+.slider-row { padding: 14px 0; }
+.sym-label { font-size: 16px; font-weight: 650; }
+.sym-hint { margin: -4px 0 10px; font-size: 13.5px; color: var(--muted); }
+.num-pick { gap: 4px; }
+.num-pick button { height: 46px; border-radius: 12px; background: var(--soft); font-size: 15px; font-weight: 650; }
+.num-pick button.on.sev-0 { background: var(--green); }
+.num-pick button.on.sev-1 { background: var(--accent); }
+.num-pick button.on.sev-2 { background: var(--sun); color: #14213D; }
+.num-pick button.on.sev-3 { background: var(--red); }
+.save-bar { display: grid; gap: 4px; text-align: center; }
+.skip-btn { justify-self: center; color: var(--muted); }
+.save-bar .secondary { margin-top: 8px; }

@@ -67,7 +67,7 @@ Supported codes are `rhr hrv hr walkhr steps energy exercise resp spo2 sleep`.
 
 ## How the analysis works (`src/lib/analysis.js`)
 
-- **Symptom score:** the average of five 0–10 ratings (fatigue, brain fog, breathlessness, aches, palpitations/dizziness), where higher is worse. Watch energy logs (10 − energy) stand in on days without a check-in.
+- **Symptom score:** the average of three 0–10 ratings (body fatigue including aches and pains, mental fatigue, brain fog), where higher is worse. Watch energy logs (10 − energy) stand in on days without a check-in.
 - **Baseline:** the median of your previous 28 days, for each signal.
 - **Today's status:** points from resting HR above normal, HRV below normal, a short night, any day in the last 3 that went well over your activity envelope (post-exertional malaise usually lags 24–72h), symptoms above baseline, and a recent crash. The total maps to Green / Amber / Red.
 - **Crash:** a day you flag, or symptoms ≥2.5 above baseline (and ≥5). Days are grouped into episodes. Recovery is counted until symptoms return to within 1 point of the pre-crash baseline.

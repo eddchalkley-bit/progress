@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { analyse } from './lib/analysis.js';
 import { makeDemoData } from './lib/demo.js';
 import { fetchData, saveCheckin, refreshResearch, reviewResearch, tagSpike, getToken, setToken, getDemoPref, setDemoPref, post, getSession, signOut } from './lib/api.js';
@@ -91,6 +91,23 @@ export default function App() {
   }, [load, demo]);
 
   const analysis = useMemo(() => (data ? analyse(data, today) : null), [data, today]);
+  // First thing in the morning, open straight onto the morning check-in until it is done.
+  const prompted = useRef(false);
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === 'visible') prompted.current = false; };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+  useEffect(() => {
+    if (demo || !analysis || prompted.current) return;
+    const t = analysis.days[analysis.days.length - 1];
+    const h = new Date().getHours();
+    if (!t || t.date !== today || h < 3 || h >= 14) return;
+    if (t.checkin?.am_at || t.morning != null) return;
+    try { if (localStorage.getItem(`progress-am-skip-${today}`)) return; } catch { /* ignore */ }
+    prompted.current = true;
+    goLog(today, 'morning'); // eslint-disable-line no-use-before-define
+  }, [analysis, demo, today]); // eslint-disable-line react-hooks/exhaustive-deps
   const emptyAnalysis = useMemo(() => analyse({ metrics: [], checkins: [], quick: [] }, today), [today]);
 
   const onSaveCheckin = async (checkin) => {
@@ -166,7 +183,7 @@ export default function App() {
         ) : (
           <>
             {tab === 'today' && <Today a={analysis} data={data} onCheckIn={goLog} onRefresh={load} loading={loading || syncing} onTag={onTag} onSync={isNative() ? () => nativeSync({ force: true }) : null} />}
-            {tab === 'log' && <LogView a={analysis} date={logDate} setDate={setLogDate} mode={logMode} setMode={setLogMode} today={today} onSave={onSaveCheckin} />}
+            {tab === 'log' && <LogView a={analysis} date={logDate} setDate={setLogDate} mode={logMode} setMode={setLogMode} today={today} onSave={onSaveCheckin} onSkip={() => { try { localStorage.setItem(`progress-am-skip-${today}`, '1'); } catch { /* ignore */ } setTab('today'); window.scrollTo(0, 0); }} />}
             {tab === 'insights' && <Insights a={analysis} research={data?.research} onReview={onReview} demo={demo} />}
             {tab === 'settings' && <Settings {...settingsProps} a={analysis} />}
           </>

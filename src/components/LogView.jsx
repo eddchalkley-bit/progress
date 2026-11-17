@@ -4,7 +4,7 @@ import { SYMPTOMS } from '../lib/analysis.js';
 import { addDays, fmtDay } from '../lib/time.js';
 import { fmtHM } from '../lib/screens.js';
 
-const EMPTY = { am_fatigue: null, am_brain_fog: null, am_breath: null, am_aches: null, am_heart: null, am_rested: null, fatigue: null, brain_fog: null, breath: null, aches: null, heart: null, pem: false, screen_hours: null, phone_hours: null, laptop_hours: null, social: null, mental: null, stress: null, rests: null, food: null, notes: '' };
+const EMPTY = { am_fatigue: null, am_mental_fatigue: null, am_brain_fog: null, am_rested: null, fatigue: null, mental_fatigue: null, brain_fog: null, pem: false, screen_hours: null, phone_hours: null, laptop_hours: null, social: null, mental: null, stress: null, rests: null, food: null, notes: '' };
 const SOCIAL = ['None', 'Light', 'Moderate', 'Heavy'];
 const FOOD = ['Poor', 'Not great', 'OK', 'Good', 'Excellent — rare!'];
 const LOAD = ['Low', 'Some', 'High', 'Very high'];
@@ -52,7 +52,7 @@ function HoursField({ label, hint, k, form, set, tracked }) {
   );
 }
 
-export default function LogView({ a, date, setDate, mode, setMode, today, onSave }) {
+export default function LogView({ a, date, setDate, mode, setMode, today, onSave, onSkip }) {
   const day = a.days.find((d) => d.date === date);
   const [form, setForm] = useState(EMPTY);
   const [state, setState] = useState('idle');
@@ -76,6 +76,7 @@ export default function LogView({ a, date, setDate, mode, setMode, today, onSave
   const prefix = part === 'morning' ? 'am_' : '';
   const touched = SYMPTOMS.some((s) => form[prefix + s.key] != null) || (part === 'morning' && form.am_rested != null);
   const amAvg = avgOf(form, 'am_'), pmAvg = avgOf(form, '');
+  const rated = SYMPTOMS.filter((s) => form[prefix + s.key] != null).length;
 
   const save = async () => {
     setState('saving'); setErr('');
@@ -100,7 +101,7 @@ export default function LogView({ a, date, setDate, mode, setMode, today, onSave
     <div className="screen">
       <PageHeader
         eyebrow={part === 'morning' ? 'Morning check-in' : 'End-of-day check-in'}
-        title={date === today ? 'Today' : fmtDay(date, { weekday: 'long', day: 'numeric', month: 'short' })}
+        title={date !== today ? fmtDay(date, { weekday: 'long', day: 'numeric', month: 'short' }) : part === 'morning' ? 'Good morning' : 'How was today?'}
       />
 
       <div className="chips">
@@ -120,8 +121,9 @@ export default function LogView({ a, date, setDate, mode, setMode, today, onSave
       <section className="card">
         <div className="card-head">
           <h3>{part === 'morning' ? 'How are you this morning?' : 'Symptoms through the day'}</h3>
-          <span className="muted small">0 none · 10 worst</span>
+          <span className="muted small">{rated} of {SYMPTOMS.length} rated</span>
         </div>
+        <p className="muted small log-intro">Tap a number from 0 (none) to 10 (worst). It takes about 30 seconds.</p>
         {part === 'evening' && amAvg != null && (
           <p className="compare-line">This morning averaged <b>{amAvg.toFixed(1)}</b>{pmAvg != null ? <> · now <b>{pmAvg.toFixed(1)}</b> <span className={pmAvg - amAvg >= 1 ? 'worse' : pmAvg - amAvg <= -1 ? 'better' : ''}>({pmAvg - amAvg >= 0 ? '+' : '−'}{Math.abs(pmAvg - amAvg).toFixed(1)})</span></> : null}</p>
         )}
@@ -134,6 +136,7 @@ export default function LogView({ a, date, setDate, mode, setMode, today, onSave
                 <span className="sym-label">{s.label}{am != null && <span className="am-hint">morning {am}</span>}</span>
                 <span className={`sev ${form[k] == null ? 'unset' : ''}`}>{sevLabel(form[k])}</span>
               </div>
+              {s.hint && <div className="sym-hint">{s.hint}</div>}
               <div className="num-pick" role="radiogroup" aria-label={s.label}>
                 {Array.from({ length: 11 }, (_, n) => (
                   <button key={n} role="radio" aria-checked={form[k] === n}
@@ -213,6 +216,8 @@ export default function LogView({ a, date, setDate, mode, setMode, today, onSave
         <button className="primary" onClick={save} disabled={state === 'saving' || (!touched && !(part === 'evening' && form.pem))}>
           {state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved ✓' : part === 'morning' ? 'Save morning check-in' : 'Save end-of-day check-in'}
         </button>
+        {state === 'saved' && onSkip && <button className="secondary" onClick={onSkip}>Go to today</button>}
+        {state !== 'saved' && part === 'morning' && date === today && onSkip && <button className="link-btn skip-btn" onClick={onSkip}>Not now</button>}
       </div>
     </div>
   );

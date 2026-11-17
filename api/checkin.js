@@ -8,6 +8,8 @@ const int = (v, max) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(0, n)) : null;
 };
 
+const NEEDS_SQL = 'Mental fatigue needs a one-off database update. In Supabase › SQL Editor, run the SQL in supabase/mental-fatigue.sql, then save again.';
+
 export default async function handler(req, res) {
   const who = await guard(req, res, ['POST']);
   if (!who) return;
@@ -20,9 +22,10 @@ export default async function handler(req, res) {
     const screen = phone != null || laptop != null ? (phone || 0) + (laptop || 0) : hrs(b.screen_hours);
     if (b.part === 'morning') {
       const am = { date, updated_at: new Date().toISOString(), am_at: new Date().toISOString(), am_rested: int(b.am_rested, 3) };
-      for (const k of ['fatigue', 'brain_fog', 'breath', 'aches', 'heart']) am[`am_${k}`] = int(b[`am_${k}`], 10);
+      for (const k of ['fatigue', 'mental_fatigue', 'brain_fog']) am[`am_${k}`] = int(b[`am_${k}`], 10);
       const { error } = await T('checkins').upsert(am, { onConflict: 'date' });
       if (error) {
+        if (/mental_fatigue/.test(error.message || '')) throw new Error(NEEDS_SQL);
         if (/am_[a-z_]+/.test(error.message || '')) throw new Error('The morning check-in needs a database update. Run the SQL in supabase/morning-checkin.sql in Supabase › SQL Editor, then try again.');
         throw error;
       }
@@ -31,10 +34,8 @@ export default async function handler(req, res) {
     const row = {
       date,
       fatigue: int(b.fatigue, 10),
+      mental_fatigue: int(b.mental_fatigue, 10),
       brain_fog: int(b.brain_fog, 10),
-      breath: int(b.breath, 10),
-      aches: int(b.aches, 10),
-      heart: int(b.heart, 10),
       pem: Boolean(b.pem),
       screen_hours: Number.isFinite(screen) ? screen : null,
       phone_hours: Number.isFinite(phone) ? phone : null,
@@ -48,6 +49,7 @@ export default async function handler(req, res) {
       updated_at: new Date().toISOString(),
     };
     let { error } = await T('checkins').upsert(row, { onConflict: 'date' });
+    if (error && /mental_fatigue/.test(error.message || '')) throw new Error(NEEDS_SQL);
     // If the database hasn't had a newer column added yet, save everything else rather than failing.
     for (let tries = 0; error && tries < 5; tries++) {
       const m = /'([a-z_]+)' column|column "?([a-z_]+)"? (?:of relation|does not exist)/i.exec(error.message || '');

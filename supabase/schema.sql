@@ -51,6 +51,9 @@ alter table checkins add column if not exists am_aches     smallint;
 alter table checkins add column if not exists am_heart     smallint;
 alter table checkins add column if not exists am_rested    smallint;   -- 0 exhausted .. 3 refreshed
 alter table checkins add column if not exists am_at        timestamptz;
+-- mental fatigue (replaces breathlessness / aches / palpitations in the symptom score)
+alter table checkins add column if not exists mental_fatigue    smallint;
+alter table checkins add column if not exists am_mental_fatigue smallint;
 
 create table if not exists quick_logs (
   id      bigint generated always as identity primary key,
