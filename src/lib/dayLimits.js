@@ -9,6 +9,22 @@ import { energyBudget, dayLoad, stepsPerUnit, ENERGY } from './energy.js';
 import { analyseSleep, viewAt } from './sleep.js';
 import { dayPlan } from './suggestions.js';
 
+// The budget is in steps' worth, so the steps you've walked can never count for less than themselves.
+// Active energy from the Watch often syncs later than steps; without this the Steps tile could say
+// "over budget" while the energy card still said "within". Raises today's physical load (and used) to match,
+// then re-checks the zone against the same amber and crash lines.
+function countStepsInBudget(e, steps, spu) {
+  if (!e?.ready || !spu || steps == null) return;
+  const stepsEU = steps / spu;
+  const delta = stepsEU - e.physical;
+  if (delta <= 0) return;
+  e.physical = Math.round(e.physical + delta);
+  e.used = Math.round(e.used + delta);
+  e.stepsLifted = true;
+  if (e.used >= e.crashLine) e.status = 'red';
+  else if (e.used >= e.amberLine || e.used > e.budget) e.status = 'amber';
+}
+
 export function todayModel(a, now = new Date()) {
   const plan0 = dayPlan(a, now);
   const sleep = analyseSleep(a);
@@ -17,6 +33,7 @@ export function todayModel(a, now = new Date()) {
   const plan = spu && plan0.budget ? dayPlan(a, now, { budgetCap: raw.budget * spu }) : plan0;
   const usualDay = raw.ready ? raw.normal / (1 + ENERGY.carry1 + ENERGY.carry2) : null;
   const energy = { ...raw, napLift: sleep.napLift, stepsPerUnit: spu, usualDay };
+  countStepsInBudget(energy, a.days[a.days.length - 1]?.steps, spu);
   return { plan, plan0, sleep, energy, spu, reference: plan0.reference ?? null };
 }
 
@@ -38,7 +55,8 @@ export function budgetHistory(a, m, n = 7) {
       const e = energyBudget(view, 1, null, analyseSleep(view).potential, undefined, m.sleep.nap.verdict);
       if (e.ready) budget = e.budget;
     }
-    const did = used != null ? used * m.spu : null;
+    let did = used != null ? used * m.spu : null;
+    if (i !== t && d.steps != null && (did == null || d.steps > did)) did = d.steps; // steps never count for less than themselves
     const limit = budget != null ? budget * m.spu : null;
     rows.push({
       idx: i, date: d.date, did, exertion: did, limit,
