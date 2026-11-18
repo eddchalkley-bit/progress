@@ -122,14 +122,32 @@ export function symptomScore(d) {
   return null;
 }
 
-// Median of the previous `window` days (not including day i).
-function rollingBaseline(days, i, get, window = BASELINE_WINDOW, min = 5) {
-  const vals = [];
+// Median of the previous `window` days (not including day i), leaving out crash days and the
+// day after one (days flagged `offBaseline`), so "normal" means a normal day, not a flare.
+// If that leaves too few days, fall back to all of them.
+export function rollingBaseline(days, i, get, window = BASELINE_WINDOW, min = 5) {
+  const calm = [], all = [];
   for (let k = Math.max(0, i - window); k < i; k++) {
     const v = get(days[k]);
-    if (v != null && Number.isFinite(v)) vals.push(v);
+    if (v == null || !Number.isFinite(v)) continue;
+    all.push(v);
+    if (!days[k].offBaseline) calm.push(v);
   }
-  return vals.length >= min ? median(vals) : null;
+  if (calm.length >= min) return median(calm);
+  return all.length >= min ? median(all) : null;
+}
+
+// Works through the days in order: each day's baseline comes only from earlier calm days,
+// then the day is marked as a crash (or the day after one) so later baselines skip it.
+function markCrashDays(days) {
+  const symBase = [];
+  for (let i = 0; i < days.length; i++) {
+    symBase[i] = symptomBaselineAt(days, i);
+    const crash = isCrashDay(days, i, symBase);
+    days[i].crashDay = crash;
+    days[i].offBaseline = crash || Boolean(days[i - 1]?.crashDay);
+  }
+  return symBase;
 }
 
 function symptomBaselineAt(days, i) {
@@ -329,7 +347,7 @@ function envelopeFor(days, symBase, crashFlags, settled, get) {
 export function analyse(data, today) {
   const days = buildDays(data, today);
   const t = days.length - 1;
-  const symBase = days.map((_, i) => symptomBaselineAt(days, i));
+  const symBase = markCrashDays(days);
   const crashes = analyseCrashes(days, symBase);
 
   const settled = days.map((d, i) => !crashes.flags[i] && !crashes.flags[i - 1]
@@ -344,13 +362,19 @@ export function analyse(data, today) {
   if (env.exercise.ready) { env.exercise.safe = round(env.exercise.safe, 1); env.exercise.risky = round(env.exercise.risky, 1); }
 
   const last28 = days.slice(Math.max(0, t - BASELINE_WINDOW), t);
+  // "Normal" leaves out crash days (and the day after), unless that would leave too little to go on.
+  const calm28 = last28.filter((d) => !d.offBaseline);
+  const normalOf = (get) => {
+    const calm = nums(calm28.map(get));
+    return calm.length >= 5 ? median(calm) : median(last28.map(get));
+  };
   const baseline = {
-    rhr: median(last28.map((d) => d.rhr)),
-    hrv: median(last28.map((d) => d.hrv)),
-    sleep: median(last28.map((d) => d.sleep_min)),
+    rhr: normalOf((d) => d.rhr),
+    hrv: normalOf((d) => d.hrv),
+    sleep: normalOf((d) => d.sleep_min),
     steps: median(last28.map((d) => d.steps)),
     exercise: median(last28.map((d) => d.exercise)),
-    symptom: median(last28.map((d) => d.symptom)),
+    symptom: normalOf((d) => d.symptom),
   };
   const withSym = last28.filter((d) => d.symptom != null);
   const stable = withSym.filter((d) => {

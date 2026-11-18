@@ -12,13 +12,17 @@ export const FULL_BASELINE = 14;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const avg = (a) => (a.length ? a.reduce((s, v) => s + v, 0) / a.length : null);
 
-function priorValues(days, i, key, window = WINDOW) {
-  const out = [];
+// Earlier values for `key`. With `calmOnly`, crash days (and the day after) are left out so
+// "your normal" isn't dragged down by flares; falls back to all days if too few are left.
+function priorValues(days, i, key, window = WINDOW, calmOnly = false) {
+  const out = [], calm = [];
   for (let k = Math.max(0, i - window); k < i; k++) {
     const v = days[k]?.[key];
-    if (v != null && Number.isFinite(v)) out.push(v);
+    if (v == null || !Number.isFinite(v)) continue;
+    out.push(v);
+    if (!days[k].offBaseline) calm.push(v);
   }
-  return out;
+  return calmOnly && calm.length >= 3 ? calm : out;
 }
 
 export function recoveryLevel(score) {
@@ -34,8 +38,8 @@ export const LEVEL_LABEL = { good: 'Normal or better', moderate: 'Below normal',
 export function recoveryFor(days, i) {
   const d = days[i];
   if (!d || d.hrv == null || d.rhr == null) return null;
-  const hrvBase = priorValues(days, i, 'hrv');
-  const rhrBase = priorValues(days, i, 'rhr');
+  const hrvBase = priorValues(days, i, 'hrv', WINDOW, true);
+  const rhrBase = priorValues(days, i, 'rhr', WINDOW, true);
   if (hrvBase.length < 3 || rhrBase.length < 3) return null;
   const hb = avg(hrvBase), rb = avg(rhrBase);
   const hrvPct = (d.hrv - hb) / hb;     // higher HRV is better

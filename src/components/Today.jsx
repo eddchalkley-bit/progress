@@ -11,6 +11,7 @@ import EnergyCard from './EnergyCard.jsx';
 import SleepCard from './SleepCard.jsx';
 import NapCard from './NapCard.jsx';
 import { SYMPTOMS, symptomWord, symptomRatings } from '../lib/analysis.js';
+import { morningStability } from '../lib/stability.js';
 import { todayModel, budgetHistory } from '../lib/dayLimits.js';
 import { BudgetWeekCard } from './BudgetHistory.jsx';
 
@@ -89,6 +90,36 @@ function HeroMeter({ e, recovery }) {
       </div>
       <div className="hm-legend"><span>Used {show(e.used)}</span><span>Budget {show(e.budget)}</span></div>
     </div>
+  );
+}
+
+
+// Morning stability: how settled your body's signals are this morning, against your own normal.
+function StabilityCard({ a }) {
+  const st = morningStability(a);
+  if (!st) return null;
+  const tone = st.score >= 4 ? 'good' : st.score === 3 ? 'mid' : 'low';
+  return (
+    <section className="card stab">
+      <div className="card-head">
+        <h3>Morning stability</h3>
+        <span className="muted small">beta</span>
+      </div>
+      <div className="stab-top">
+        <div className={`stab-score ${tone}`}><span>{st.score}</span><small>/ 5</small></div>
+        <div>
+          <div className="stab-word">{st.word}</div>
+          <div className="muted small">{st.score >= 4 ? 'Your body’s signals are close to normal.' : st.score === 3 ? 'A few signals are off your normal. Keep the day gentle.' : 'Several signals are off your normal. Plan a low-demand day.'}</div>
+        </div>
+      </div>
+      <div className={`stab-pips ${tone}`} role="img" aria-label={`${st.score} out of 5`}>
+        {[1, 2, 3, 4, 5].map((n) => <i key={n} className={n <= st.score ? 'on' : ''} />)}
+      </div>
+      <ul className="stab-list">
+        {st.factors.map((f) => <li key={f.key} className={f.level}>{f.text}</li>)}
+      </ul>
+      <p className="muted small stab-foot">Compared with your own normal days, leaving crash days out. A guide, not a prediction: if it disagrees with how you feel, trust how you feel.{st.partial ? ' Some signals are missing today, so this is based on fewer inputs.' : ''}</p>
+    </section>
   );
 }
 
@@ -176,6 +207,8 @@ export default function Today({ a, data, onCheckIn, onRefresh, loading, onTag, o
           <ul className="tips">{plan.tips.slice(0, 3).map((tip) => <li key={tip.id}>{tip.text}</li>)}</ul>
         </section>
       )}
+
+      <StabilityCard a={a} />
 
       <Glance a={a} plan={plan} sleep={sleep} />
 
