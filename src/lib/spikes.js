@@ -6,6 +6,9 @@ export const TAGS = [
   { id: 'screens', label: 'Screens', idea: 'Take a screen break every 20–30 minutes and avoid scrolling in bed.' },
   { id: 'driving', label: 'Driving', idea: 'Keep trips short, break longer journeys, and be a passenger where you can.' },
   { id: 'walking', label: 'Walking / moving', idea: 'Shorter trips with a sit-down halfway. Stop before your heart rate climbs.' },
+  { id: 'training', label: 'Training', idea: 'Keep sessions short and well under your heart-rate ceiling, with a proper rest between sets and afterwards.' },
+  { id: 'cooking', label: 'Cooking', idea: 'Sit on a stool while you prep, use simple one-pot meals, and rest before you eat.' },
+  { id: 'gardening', label: 'Gardening', idea: 'Do ten minutes at a time, sit between jobs, and avoid bending, digging and lifting.' },
   { id: 'chores', label: 'Chores / standing', idea: 'Sit for tasks where you can — a perching stool in the kitchen helps — and split jobs up.' },
   { id: 'shower', label: 'Shower / dressing', idea: 'Try a shower stool, cooler water, and a rest straight after.' },
   { id: 'stress', label: 'Stress', idea: 'Slow breathing with a longer out-breath for a few minutes can help your heart rate settle.' },
@@ -22,6 +25,9 @@ export function normaliseTag(raw) {
   for (const t of TAGS) if (t.label.toLowerCase().startsWith(s) || s.startsWith(t.label.toLowerCase().split(' ')[0])) return t.id;
   if (/exercis|walk|move|stairs/.test(s)) return 'walking';
   if (/talk|friend|people|visit|call|meeting/.test(s)) return 'social';
+  if (/train|gym|workout|run|jog|cycl|swim/.test(s)) return 'training';
+  if (/cook|kitchen|bak|meal prep/.test(s)) return 'cooking';
+  if (/garden|plant|mow|weed|digging|lawn/.test(s)) return 'gardening';
   if (/phone|tv|laptop|computer|screen/.test(s)) return 'screens';
   if (/car|drive/.test(s)) return 'driving';
   return 'other';
