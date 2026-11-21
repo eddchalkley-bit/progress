@@ -26,6 +26,11 @@ export default async function handler(req, res) {
     else if (plan.budget) extra.push(`Today: ~${plan.budget.toLocaleString('en-GB')} steps (${(plan.steps || 0).toLocaleString('en-GB')} so far)`);
     if (sleep.targetBed != null) extra.push(`Bed by ${fmtClock(sleep.targetBed)} tonight`);
     if (plan.tips[0]) extra.push(plan.tips[0].text);
+    // ?format=card — the small summary Harbour shows on its Today screen
+    if (req.query?.format === 'card') {
+      const { level, title, advice } = a.status;
+      return res.status(200).json({ level, title, advice, lines: extra, at: new Date().toISOString() });
+    }
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.status(200).send([a.statusText.split('\nBudget:')[0], ...extra].join('\n'));
   } catch (err) {
